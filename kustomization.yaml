@@ -1,0 +1,16 @@
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+- name: mtapi-api-server
+  newName: georgyo/mtapi-api-server
+  newTag: "202212031644"
+
+resources:
+- deployment.yaml
+
+secretGenerator:
+- files:
+  - settings.cfg
+  name: mtapi-settings

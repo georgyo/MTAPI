@@ -163,7 +163,7 @@ def _make_envelope(data: list["StationSeralized"]) -> flask.Response:
 
 
 def main() -> None:
-    app.run(use_reloader=False)
+    app.run(use_reloader=False, port=int(os.environ.get("PORT", "5000")))
 
 
 if __name__ == "__main__":

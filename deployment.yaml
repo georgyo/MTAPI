@@ -1,0 +1,25 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mtapi
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/scale-to-zero-pod-retention-period: "5m0s"
+    spec:
+      containers:
+      - image: mtapi-api-server
+        env:
+          - name: MTAPI_SETTINGS
+            value: "/var/run/settings.cfg"
+        volumeMounts:
+          - mountPath: "/var/run/settings.cfg"
+            subPath: settings.cfg
+            name: mtapi-settings
+            readOnly: true
+      volumes:
+        - name: mtapi-settings
+          secret:
+            secretName: mtapi-settings-kmdfc75db9

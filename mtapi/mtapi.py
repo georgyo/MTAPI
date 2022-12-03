@@ -4,12 +4,14 @@ import datetime
 import json
 import logging
 import math
+import pathlib
 import threading
 import urllib.error
 import urllib.request
 from collections import defaultdict
 from itertools import islice
 from operator import itemgetter
+from os.path import isfile, join
 from typing import Any, Literal, TypeAlias, TypedDict
 
 import google.protobuf.message
@@ -109,6 +111,14 @@ class Mtapi(object):
         self._stops_to_stations: dict[str, str] = {}
         self._routes: dict[str, set[str]] = {}
         self._read_lock = threading.RLock()
+
+        if stations_file[0] != "/":
+            if isfile(stations_file):
+                pass
+            elif isfile(join("../", stations_file)):
+                stations_file = join("../", stations_file)
+            elif isfile(join(pathlib.Path(__file__).parent.parent.resolve(), stations_file)):
+                stations_file = join(pathlib.Path(__file__).parent.parent.resolve(), stations_file)
 
         # initialize the stations database
         try:
