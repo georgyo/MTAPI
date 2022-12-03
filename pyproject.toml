@@ -43,3 +43,6 @@ make_stations_json = "scripts.make_stations_json:main"
 
 [tool.black]
 line-length = 120
+
+[tool.isort]
+profile = "black"

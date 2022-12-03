@@ -17,43 +17,20 @@ import google.protobuf.message
 from mtaproto import TZ, FeedResponse, Trip, TripStop
 
 from ._mtapithreader import _MtapiThreader
+from ._typing import (
+    Directions_t,
+    JsonStation,
+    JsonStations,
+    StationSeralized,
+    Train,
+    point_t,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def distance(p1: list[float], p2: tuple[float, float]) -> float:
+def distance(p1: point_t, p2: point_t) -> float:
     return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
-
-
-JsonStop: TypeAlias = dict[str, list[float]]
-
-Directions_t: TypeAlias = str | Literal["N", "S"]
-
-
-class JsonStation(TypedDict):
-    id: str
-    location: list[float]
-    name: str
-    stops: list[JsonStop]
-
-
-JsonStations: TypeAlias = dict[str, JsonStation]
-
-
-class Train(TypedDict):
-    route: str
-    time: datetime.datetime
-
-
-class StationSeralized(TypedDict):
-    id: str
-    location: list[float]
-    name: str
-    stops: list[JsonStop]
-    N: list[Train]
-    S: list[Train]
-    routes: set[str]
-    last_update: datetime.datetime | None
 
 
 class Station(object):
