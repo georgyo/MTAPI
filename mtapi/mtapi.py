@@ -1,4 +1,5 @@
-import urllib, contextlib, datetime, copy
+import urllib.request, urllib.error
+import contextlib, datetime, copy
 from collections import defaultdict
 from itertools import islice
 from operator import itemgetter
@@ -11,7 +12,7 @@ from mtapi._mtapithreader import _MtapiThreader
 
 logger = logging.getLogger(__name__)
 
-def distance(p1, p2):
+def distance(p1: list[float], p2: list[float]) -> float:
     return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
 
 class Mtapi(object):
