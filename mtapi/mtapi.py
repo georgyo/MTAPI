@@ -12,8 +12,9 @@ from collections import defaultdict
 from itertools import islice
 from operator import itemgetter
 from os.path import isfile, join
-from typing import Any, Literal, TypeAlias, TypedDict
+from typing import Any, Literal
 
+import certifi
 import google.protobuf.message
 
 from mtaproto import TZ, FeedResponse, Trip, TripStop
@@ -151,7 +152,7 @@ class Mtapi(object):
         try:
             request = urllib.request.Request(feed_url)
             request.add_header("x-api-key", self._KEY)
-            with contextlib.closing(urllib.request.urlopen(request)) as r:
+            with contextlib.closing(urllib.request.urlopen(request, cafile=certifi.where())) as r:
                 data = r.read()
                 return FeedResponse(data)
 
