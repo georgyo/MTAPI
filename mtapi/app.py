@@ -1,4 +1,5 @@
 # coding: utf-8
+# typing: ignore
 """
     mta-api-sanity
     ~~~~~~
@@ -11,11 +12,17 @@
 
 from mtapi.mtapi import Mtapi
 from flask import Flask, request, jsonify, render_template, abort, redirect
+import flask
 from flask.json import JSONEncoder
 from datetime import datetime
 from functools import wraps, reduce
 import logging
 import os
+import typing as t
+
+
+if t.TYPE_CHECKING:
+    from .mtapi import StationSeralized
 
 app = Flask(__name__)
 app.config.update(
@@ -24,6 +31,7 @@ app.config.update(
     CACHE_SECONDS=60,
     THREADED=True
 )
+
 
 _SETTINGS_ENV_VAR = 'MTAPI_SETTINGS'
 _SETTINGS_DEFAULT_PATH = './settings.cfg'
@@ -41,7 +49,7 @@ if app.debug:
 
 class CustomJSONEncoder(JSONEncoder):
 
-    def default(self, obj):
+    def default(self, obj: t.Any) -> t.Any:
         try:
             if isinstance(obj, datetime):
                 return obj.isoformat()
@@ -61,9 +69,10 @@ mta = Mtapi(
     expires_seconds=app.config['CACHE_SECONDS'],
     threaded=app.config['THREADED'])
 
-def cross_origin(f):
+P = t.ParamSpec("P")
+def cross_origin(f: t.Callable[P, flask.Response]) -> t.Callable[P, flask.Response]:
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated_function(*args: P.args, **kwargs: P.kwargs) -> flask.Response:
         resp = f(*args, **kwargs)
 
         if app.config['DEBUG']:
@@ -77,7 +86,7 @@ def cross_origin(f):
 
 @app.route('/')
 @cross_origin
-def index():
+def index() -> flask.Response:
     return jsonify({
         'title': 'MTAPI',
         'readme': 'Visit https://github.com/jonthornton/MTAPI for more info'
@@ -85,7 +94,7 @@ def index():
 
 @app.route('/by-location', methods=['GET'])
 @cross_origin
-def by_location():
+def by_location() -> flask.Response:
     try:
         location = (float(request.args['lat']), float(request.args['lon']))
     except KeyError as e:
@@ -101,7 +110,7 @@ def by_location():
 
 @app.route('/by-route/<route>', methods=['GET'])
 @cross_origin
-def by_route(route):
+def by_route(route: str) -> flask.Response | t.Any:
 
     if route.islower():
         return redirect(request.host_url + 'by-route/' + route.upper(), code=301)
@@ -114,7 +123,7 @@ def by_route(route):
 
 @app.route('/by-id/<id_string>', methods=['GET'])
 @cross_origin
-def by_index(id_string):
+def by_index(id_string: str) -> flask.Response:
     ids = id_string.split(',')
     try:
         data = mta.get_by_id(ids)
@@ -124,13 +133,13 @@ def by_index(id_string):
 
 @app.route('/routes', methods=['GET'])
 @cross_origin
-def routes():
+def routes() -> flask.Response:
     return jsonify({
         'data': sorted(mta.get_routes()),
         'updated': mta.last_update()
         })
 
-def _envelope_reduce(a, b):
+def _envelope_reduce(a: "StationSeralized", b: "StationSeralized") -> "StationSeralized":
     if a['last_update'] and b['last_update']:
         return a if a['last_update'] < b['last_update'] else b
     elif a['last_update']:
@@ -138,7 +147,7 @@ def _envelope_reduce(a, b):
     else:
         return b
 
-def _make_envelope(data):
+def _make_envelope(data: list["StationSeralized"]) -> flask.Response:
     time = None
     if data:
         time = reduce(_envelope_reduce, data)['last_update']
@@ -149,7 +158,7 @@ def _make_envelope(data):
         })
 
 
-def main():
+def main() -> None:
     app.run(use_reloader=False)
 if __name__ == '__main__':
     main()
