@@ -7,7 +7,7 @@ import math, json
 import threading
 import logging
 import google.protobuf.message
-from mtaproto.feedresponse import FeedResponse, Trip, TripStop, TZ
+from mtaproto import FeedResponse, Trip, TripStop, TZ
 from ._mtapithreader import _MtapiThreader
 from typing import Literal, TypedDict, TypeAlias, Any
 
@@ -42,50 +42,48 @@ class StationSeralized(TypedDict):
     routes: set[str]
     last_update: datetime.datetime | None
 
+class Station(object):
+    last_update = None
+    trains: dict[Directions_t, list[Train]]
+    routes: set[str]
+    
+    def __init__(self, json: JsonStation):
+        self.json = json
+        self.trains = {}
+        self.clear_train_data()
+
+    def __getitem__(self, key: str) -> Any:
+        return self.json.__getitem__(key)
+
+    def add_train(self, route_id: str, direction: Directions_t, train_time: datetime.datetime, feed_time: datetime.datetime) -> None:
+        self.routes.add(route_id)
+        self.trains[direction].append({
+            'route': route_id,
+            'time': train_time
+        })
+        self.last_update = feed_time
+
+    def clear_train_data(self) -> None:
+        self.trains['N'] = []
+        self.trains['S'] = []
+        self.routes = set()
+        self.last_update = None
+
+    def sort_trains(self, max_trains: int) -> None:
+        self.trains['S'] = sorted(self.trains['S'], key=itemgetter('time'))[:max_trains]
+        self.trains['N'] = sorted(self.trains['N'], key=itemgetter('time'))[:max_trains]
+
+    def serialize(self) -> StationSeralized :
+        out: StationSeralized = {
+            'N': self.trains['N'],
+            'S': self.trains['S'],
+            'routes': self.routes,
+            'last_update': self.last_update
+        }  # type: ignore[typeddict-item]
+        out.update(self.json)  # type: ignore[typeddict-item]
+        return out
 
 class Mtapi(object):
-
-    class _Station(object):
-        last_update = None
-        trains: dict[Directions_t, list[Train]]
-        routes: set[str]
-        
-        def __init__(self, json: JsonStation):
-            self.json = json
-            self.trains = {}
-            self.clear_train_data()
-
-        def __getitem__(self, key: str) -> Any:
-            return self.json.__getitem__(key)
-
-        def add_train(self, route_id: str, direction: Directions_t, train_time: datetime.datetime, feed_time: datetime.datetime) -> None:
-            self.routes.add(route_id)
-            self.trains[direction].append({
-                'route': route_id,
-                'time': train_time
-            })
-            self.last_update = feed_time
-
-        def clear_train_data(self) -> None:
-            self.trains['N'] = []
-            self.trains['S'] = []
-            self.routes = set()
-            self.last_update = None
-
-        def sort_trains(self, max_trains: int) -> None:
-            self.trains['S'] = sorted(self.trains['S'], key=itemgetter('time'))[:max_trains]
-            self.trains['N'] = sorted(self.trains['N'], key=itemgetter('time'))[:max_trains]
-
-        def serialize(self) -> StationSeralized :
-            out: StationSeralized = {
-                'N': self.trains['N'],
-                'S': self.trains['S'],
-                'routes': self.routes,
-                'last_update': self.last_update
-            }  # type: ignore[typeddict-item]
-            out.update(self.json)  # type: ignore[typeddict-item]
-            return out
-
 
     _FEED_URLS = [
         'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',  # 1234567S
@@ -104,7 +102,7 @@ class Mtapi(object):
         self._MAX_MINUTES = max_minutes
         self._EXPIRES_SECONDS = expires_seconds
         self._THREADED = threaded
-        self._stations: dict[str, Mtapi._Station] = {}
+        self._stations: dict[str, Station] = {}
         self._stops_to_stations: dict[str, str]  = {}
         self._routes: dict[str, set[str]] = {}
         self._read_lock = threading.RLock()
@@ -114,7 +112,7 @@ class Mtapi(object):
             with open(stations_file, 'r') as f:
                 station_data: JsonStations = json.load(f)
                 for id in station_data:
-                    self._stations[id] = self._Station(station_data[id])
+                    self._stations[id] = Station(station_data[id])
                 self._stops_to_stations = self._build_stops_index(self._stations)
 
         except IOError as e:
@@ -128,7 +126,7 @@ class Mtapi(object):
             self.threader.start_timer()
 
     @staticmethod
-    def _build_stops_index(stations: dict[str, "Mtapi._Station"]) ->  dict[str, str]:
+    def _build_stops_index(stations: dict[str, Station]) ->  dict[str, str]:
         stops: dict[str, str] = {}
         for station_id in stations:
             for stop_id in stations[station_id]['stops'].keys():
