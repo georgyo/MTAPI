@@ -31,11 +31,12 @@ mypy-protobuf = "^3.4.0"
 types-protobuf = "^4.21.0.1"
 types-pytz = "^2022.6.0.1"
 types-requests = "^2.28.11.5"
+types-psutil = "^5.9.5.5"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-app = "app:main"
+app = "mtapi.app:main"
 make_stations_json = "scripts.make_stations_json:main"

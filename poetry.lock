@@ -267,6 +267,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-psutil"
+version = "5.9.5.5"
+description = "Typing stubs for psutil"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-pytz"
 version = "2022.6.0.1"
 description = "Typing stubs for pytz"
@@ -343,7 +351,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "6c279c3a450bcebfa91cf969e1a5f4e45cfd6db47c508e39523d8125f8904c17"
+content-hash = "8489ab4dbe626e928557a199b7dc4dca150c5f80fdcaa4870081a1effd808c56"
 
 [metadata.files]
 black = [
@@ -556,6 +564,10 @@ typed-ast = [
 types-protobuf = [
     {file = "types-protobuf-4.21.0.1.tar.gz", hash = "sha256:d8ce2e1dc54e9b5830e553d31308e87732c916a0b0e288d280bddaa00fa98113"},
     {file = "types_protobuf-4.21.0.1-py3-none-any.whl", hash = "sha256:80aa071fcbcf1372222aed7deb97a49757095b71a05edcf14ff89cc8caa4a165"},
+]
+types-psutil = [
+    {file = "types-psutil-5.9.5.5.tar.gz", hash = "sha256:4f26fdb2cb064b274cbc6359fba4abf3b3a2993d7d4abc336ad0947568212c62"},
+    {file = "types_psutil-5.9.5.5-py3-none-any.whl", hash = "sha256:e576bb81c74f7443b067e94f92435894d5dd561161bec3d6401727b63df009f0"},
 ]
 types-pytz = [
     {file = "types-pytz-2022.6.0.1.tar.gz", hash = "sha256:d078196374d1277e9f9984d49373ea043cf2c64d5d5c491fbc86c258557bd46f"},
