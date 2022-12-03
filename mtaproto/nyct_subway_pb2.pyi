@@ -9,7 +9,7 @@ import google.protobuf.internal.containers
 import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.internal.extension_dict
 import google.protobuf.message
-import gtfs_realtime_pb2
+from . import gtfs_realtime_pb2
 import sys
 import typing
 
