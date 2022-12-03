@@ -40,3 +40,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 app = "mtapi.app:main"
 make_stations_json = "scripts.make_stations_json:main"
+
+[tool.black]
+line-length = 120
