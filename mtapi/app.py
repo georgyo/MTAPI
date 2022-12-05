@@ -180,9 +180,15 @@ def _make_envelope(data: list[m.Complex]) -> flask.Response:
     return jsonify({"data": data, "updated": time})
 
 
-def main() -> None:
+def create_app() -> flask.Flask:
     rebar.init_app(app)
-    app.run(use_reloader=False, port=int(os.environ.get("PORT", "5000")))
+    return app
+
+def main() -> None:
+    create_app().run(
+            use_reloader=False,
+            port=int(os.environ.get("PORT", "5000")),
+            )
 
 
 if __name__ == "__main__":

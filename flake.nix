@@ -19,11 +19,21 @@
             projectDir = ./.;
             preferWheels = true;
           };
+          mtapi_shell_script =
+            let
+              app = final.mtapi.dependencyEnv;
+            in
+            prev.writeShellScript "start_mtapi_server" ''
+              exec ${app}/bin/gunicorn \
+                -w ''${NPROC:-$(${prev.coreutils}/bin/nproc)} \
+                -b "''${HOST:-0.0.0.0}:''${PORT:-8080}" \
+                "mtapi.app:create_app()"
+            '';
           dockerImage = prev.dockerTools.buildImage {
             name = "mtapi-api-server";
             tag = "latest";
             config = {
-              Cmd = [ "${final.mtapi}/bin/app" ];
+              Cmd = [ "${final.mtapi_shell_script}" ];
             };
           };
         })
@@ -40,7 +50,7 @@
           inherit mtapi dockerImage;
         };
 
-        defaultPackage = pkgs.mtapi;
+        defaultPackage = pkgs.mtapi.dependencyEnv;
 
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [

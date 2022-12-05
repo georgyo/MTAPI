@@ -14,6 +14,8 @@ spec:
         env:
           - name: MTAPI_SETTINGS
             value: "/var/run/settings.cfg"
+          - name: NPROC
+            value: "2"
         volumeMounts:
           - mountPath: "/var/run/settings.cfg"
             subPath: settings.cfg

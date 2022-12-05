@@ -5,7 +5,7 @@ kind: Kustomization
 images:
 - name: mtapi-api-server
   newName: georgyo/mtapi-api-server
-  newTag: "202212031822"
+  newTag: "202212051434"
 
 resources:
 - deployment.yaml
