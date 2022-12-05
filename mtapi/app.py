@@ -19,15 +19,20 @@ from functools import reduce, wraps
 import flask
 from flask import Flask, abort, jsonify, redirect, render_template, request
 from flask.json import JSONEncoder
+from flask_rebar import Rebar, SwaggerV3Generator, errors
 
-from mtapi.mtapi import Mtapi
-
-if t.TYPE_CHECKING:
-    from .mtapi import StationSeralized
+from . import models as m
+from .mtapi import Mtapi
 
 app = Flask(__name__)
 app.config.update(MAX_TRAINS=10, MAX_MINUTES=30, CACHE_SECONDS=60, THREADED=True)
 
+rebar = Rebar()
+registry = rebar.create_handler_registry(
+    swagger_generator=SwaggerV3Generator(
+        title="MTAPI",
+    ),
+)
 
 _SETTINGS_ENV_VAR = "MTAPI_SETTINGS"
 _SETTINGS_DEFAULT_PATH = "./settings.cfg"
@@ -91,19 +96,20 @@ def cross_origin(f: t.Callable[P, flask.Response]) -> t.Callable[P, flask.Respon
 @app.route("/")
 @cross_origin
 def index() -> flask.Response:
-    return jsonify(
-        {
-            "title": "MTAPI",
-            "readme": "Visit https://github.com/jonthornton/MTAPI for more info",
-        }
-    )
+    return flask.redirect("/swagger/ui", 307)
 
 
-@app.route("/by-location", methods=["GET"])
+@registry.handles(
+    rule="/by-location",
+    method="GET",
+    query_string_schema=m.ByLocationQueryStringSchema,
+    response_body_schema=m.ComplexResponseSchema,
+)
 @cross_origin
 def by_location() -> flask.Response:
+    body = rebar.validated_args
     try:
-        location = (float(request.args["lat"]), float(request.args["lon"]))
+        location = (float(body.lat), float(body.lon))
     except KeyError as e:
         print(e)
         response = jsonify({"error": "Missing lat/lon parameter"})
@@ -114,7 +120,11 @@ def by_location() -> flask.Response:
     return _make_envelope(data)
 
 
-@app.route("/by-route/<route>", methods=["GET"])
+@registry.handles(
+    rule="/by-route/<route>",
+    method="GET",
+    response_body_schema=m.ComplexResponseSchema,
+)
 @cross_origin
 def by_route(route: str) -> flask.Response | t.Any:
 
@@ -128,7 +138,11 @@ def by_route(route: str) -> flask.Response | t.Any:
         abort(404)
 
 
-@app.route("/by-id/<id_string>", methods=["GET"])
+@registry.handles(
+    rule="/by-id/<id_string>",
+    method="GET",
+    response_body_schema=m.ComplexResponseSchema,
+)
 @cross_origin
 def by_index(id_string: str) -> flask.Response:
     ids = id_string.split(",")
@@ -139,30 +153,35 @@ def by_index(id_string: str) -> flask.Response:
         abort(404)
 
 
-@app.route("/routes", methods=["GET"])
+@registry.handles(
+    rule="/routes",
+    method="GET",
+    response_body_schema=m.RoutesResponseSchema,
+)
 @cross_origin
 def routes() -> flask.Response:
     return jsonify({"data": sorted(mta.get_routes()), "updated": mta.last_update()})
 
 
-def _envelope_reduce(a: "StationSeralized", b: "StationSeralized") -> "StationSeralized":
-    if a["last_update"] and b["last_update"]:
-        return a if a["last_update"] < b["last_update"] else b
-    elif a["last_update"]:
+def _envelope_reduce(a: m.Complex, b: m.Complex) -> m.Complex:
+    if a.last_update and b.last_update:
+        return a if a.last_update < b.last_update else b
+    elif a.last_update:
         return a
     else:
         return b
 
 
-def _make_envelope(data: list["StationSeralized"]) -> flask.Response:
+def _make_envelope(data: list[m.Complex]) -> flask.Response:
     time = None
     if data:
-        time = reduce(_envelope_reduce, data)["last_update"]
+        time = reduce(_envelope_reduce, data).last_update
 
     return jsonify({"data": data, "updated": time})
 
 
 def main() -> None:
+    rebar.init_app(app)
     app.run(use_reloader=False, port=int(os.environ.get("PORT", "5000")))
 
 

@@ -6,28 +6,22 @@ import logging
 import math
 import pathlib
 import threading
+import typing as t
 import urllib.error
 import urllib.request
 from collections import defaultdict
 from itertools import islice
-from operator import itemgetter
+from operator import attrgetter
 from os.path import isfile, join
-from typing import Any, Literal
 
 import certifi
 import google.protobuf.message
 
 from mtaproto import TZ, FeedResponse, Trip, TripStop
 
+from . import models as m
 from ._mtapithreader import _MtapiThreader
-from ._typing import (
-    Directions_t,
-    JsonStation,
-    JsonStations,
-    StationSeralized,
-    Train,
-    point_t,
-)
+from ._typing import Directions_t, JsonStation, JsonStations, point_t
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +32,7 @@ def distance(p1: point_t, p2: point_t) -> float:
 
 class Station(object):
     last_update = None
-    trains: dict[Directions_t, list[Train]]
+    trains: dict[Directions_t, list[m.TrainStop]]
     routes: set[str]
 
     def __init__(self, json: JsonStation):
@@ -46,7 +40,7 @@ class Station(object):
         self.trains = {}
         self.clear_train_data()
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> t.Any:
         return self.json.__getitem__(key)
 
     def add_train(
@@ -57,7 +51,7 @@ class Station(object):
         feed_time: datetime.datetime,
     ) -> None:
         self.routes.add(route_id)
-        self.trains[direction].append({"route": route_id, "time": train_time})
+        self.trains[direction].append(m.TrainStop(route=route_id, time=train_time))
         self.last_update = feed_time
 
     def clear_train_data(self) -> None:
@@ -67,17 +61,20 @@ class Station(object):
         self.last_update = None
 
     def sort_trains(self, max_trains: int) -> None:
-        self.trains["S"] = sorted(self.trains["S"], key=itemgetter("time"))[:max_trains]
-        self.trains["N"] = sorted(self.trains["N"], key=itemgetter("time"))[:max_trains]
+        self.trains["S"] = sorted(self.trains["S"], key=attrgetter("time"))[:max_trains]
+        self.trains["N"] = sorted(self.trains["N"], key=attrgetter("time"))[:max_trains]
 
-    def serialize(self) -> StationSeralized:
-        out: StationSeralized = {
-            "N": self.trains["N"],
-            "S": self.trains["S"],
-            "routes": self.routes,
-            "last_update": self.last_update,
-        }  # type: ignore[typeddict-item]
-        out.update(self.json)  # type: ignore[typeddict-item]
+    def serialize(self) -> m.Complex:
+        out = m.Complex(
+            N=self.trains["N"],
+            S=self.trains["S"],
+            routes=self.routes,
+            last_update=self.last_update,
+            id=self.json["id"],
+            name=self.json["name"],
+            stops=self.json["stops"],
+            location=self.json["location"],
+        )
         return out
 
 
@@ -125,6 +122,7 @@ class Mtapi(object):
         try:
             with open(stations_file, "r") as f:
                 station_data: JsonStations = json.load(f)
+
                 for id in station_data:
                     self._stations[id] = Station(station_data[id])
                 self._stops_to_stations = self._build_stops_index(self._stations)
@@ -148,7 +146,7 @@ class Mtapi(object):
 
         return stops
 
-    def _load_mta_feed(self, feed_url: str) -> FeedResponse | Literal[False]:
+    def _load_mta_feed(self, feed_url: str) -> FeedResponse | t.Literal[False]:
         try:
             request = urllib.request.Request(feed_url)
             request.add_header("x-api-key", self._KEY)
@@ -222,7 +220,7 @@ class Mtapi(object):
     def last_update(self) -> datetime.datetime:
         return self._last_update
 
-    def get_by_point(self, point: tuple[float, float], limit: int = 5) -> list[StationSeralized]:
+    def get_by_point(self, point: point_t, limit: int = 5) -> list[m.Complex]:
         if self.is_expired():
             self._update()
 
@@ -237,7 +235,7 @@ class Mtapi(object):
     def get_routes(self) -> list[str]:
         return list(self._routes.keys())
 
-    def get_by_route(self, route: str) -> list[StationSeralized]:
+    def get_by_route(self, route: str) -> list[m.Complex]:
         route = route.upper()
 
         if self.is_expired():
@@ -246,10 +244,10 @@ class Mtapi(object):
         with self._read_lock:
             out = [self._stations[self._stops_to_stations[k]].serialize() for k in self._routes[route]]
 
-        out.sort(key=lambda x: x["name"])
+        out.sort(key=lambda x: x.name)
         return out
 
-    def get_by_id(self, ids: list[str]) -> list[StationSeralized]:
+    def get_by_id(self, ids: list[str]) -> list[m.Complex]:
         if self.is_expired():
             self._update()
 

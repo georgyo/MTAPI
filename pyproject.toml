@@ -17,12 +17,15 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.10"
 flask = "^2.2.2"
 protobuf = "^4.21.10"
 pytz = "^2022.6"
 requests = "^2.28.1"
 certifi = "^2022.9.24"
+flask-rebar = "^2.3.0"
+marshmallow-dataclass = {extras = ["enum", "union"], version = "^8.5.10"}
+typeguard = "^2.13.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
@@ -33,6 +36,8 @@ types-protobuf = "^4.21.0.1"
 types-pytz = "^2022.6.0.1"
 types-requests = "^2.28.11.5"
 types-psutil = "^5.9.5.5"
+types-colorama = "^0.4.15.4"
+types-cryptography = "^3.3.23.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -47,3 +52,6 @@ line-length = 120
 
 [tool.isort]
 profile = "black"
+
+[tool.mypy]
+plugins = "marshmallow_dataclass.mypy"
