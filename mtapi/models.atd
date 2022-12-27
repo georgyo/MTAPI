@@ -1,0 +1,19 @@
+type trainstop = {
+  route: string;
+  time: string;
+}
+
+type stops = (string * float list) list <json repr="object">
+
+type complex = {
+  n <json name="N">: trainstop list;
+  s <json name="S">: trainstop list;
+  id: string;
+  last_update: string;
+  name: string;
+  routes: string list;
+  stops: stops;  
+}
+
+
+

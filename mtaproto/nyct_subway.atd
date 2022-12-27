@@ -1,0 +1,28 @@
+type time_range  <ocaml from="Gtfs_realtime"> = abstract
+
+type trip_replacement_period = {
+  ?route_id: string option;
+  ?replacement_period: time_range option;
+}
+
+type nyct_feed_header = {
+  nyct_subway_version: string;
+  trip_replacement_period: trip_replacement_period list;
+}
+
+type nyct_trip_descriptor_direction = 
+  [ North
+  | East
+  | South
+  | West ] <ocaml repr="classic">
+
+type nyct_trip_descriptor = {
+  ?train_id: string option;
+  ?is_assigned: bool option;
+  ?direction: nyct_trip_descriptor_direction option;
+}
+
+type nyct_stop_time_update = {
+  ?scheduled_track: string option;
+  ?actual_track: string option;
+}

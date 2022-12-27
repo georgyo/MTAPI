@@ -1,0 +1,168 @@
+type feed_header_incrementality  = 
+  [ Full_dataset | Differential ] <ocaml repr="classic"> 
+
+type feed_header  = {
+  gtfs_realtime_version: string;
+  ?incrementality: feed_header_incrementality option;
+  ?timestamp: int <ocaml repr="int64"> <biniou repr="int64"> option;
+}
+
+type trip_descriptor_schedule_relationship = 
+  [ Scheduled
+  | Added
+  | Unscheduled
+  | Canceled ] <ocaml repr="classic">
+
+type trip_descriptor  = {
+  ?trip_id: string option;
+  ?route_id: string option;
+  ?direction_id: int <ocaml repr="int32"> <biniou repr="int32"> option;
+  ?start_time: string option;
+  ?start_date: string option;
+  ?schedule_relationship: trip_descriptor_schedule_relationship option;
+}
+
+type vehicle_descriptor  = {
+  ?id: string option;
+  ?label: string option;
+  ?license_plate: string option;
+}
+
+type trip_update_stop_time_event  = {
+  ?delay: int <ocaml repr="int32"> <biniou repr="int32"> option;
+  ?time: int <ocaml repr="int64"> <biniou repr="int64"> option;
+  ?uncertainty: int <ocaml repr="int32"> <biniou repr="int32"> option;
+}
+
+type trip_update_stop_time_update_schedule_relationship  = 
+  [ Scheduled
+  | Skipped
+  | No_data ] <ocaml repr="classic">
+
+type trip_update_stop_time_update  = {
+  ?stop_sequence: int <ocaml repr="int32"> <biniou repr="int32"> option;
+  ?stop_id: string option;
+  ?arrival: trip_update_stop_time_event option;
+  ?departure: trip_update_stop_time_event option;
+  ?schedule_relationship: trip_update_stop_time_update_schedule_relationship
+                            option;
+}
+
+type trip_update  = {
+  trip: trip_descriptor;
+  ?vehicle: vehicle_descriptor option;
+  stop_time_update: trip_update_stop_time_update list;
+  ?timestamp: int <ocaml repr="int64"> <biniou repr="int64"> option;
+  ?delay: int <ocaml repr="int32"> <biniou repr="int32"> option;
+}
+
+type position  = {
+  latitude: float;
+  longitude: float;
+  ?bearing: float option;
+  ?odometer: float option;
+  ?speed: float option;
+}
+
+type vehicle_position_vehicle_stop_status  = 
+  [ Incoming_at
+  | Stopped_at
+  | In_transit_to ] <ocaml repr="classic">
+
+type vehicle_position_congestion_level  = 
+  [ Unknown_congestion_level
+  | Running_smoothly
+  | Stop_and_go
+  | Congestion
+  | Severe_congestion ] <ocaml repr="classic">
+
+type vehicle_position_occupancy_status  = 
+  [ Empty
+  | Many_seats_available
+  | Few_seats_available
+  | Standing_room_only
+  | Crushed_standing_room_only
+  | Full
+  | Not_accepting_passengers ] <ocaml repr="classic">
+
+type vehicle_position  = {
+  ?trip: trip_descriptor option;
+  ?vehicle: vehicle_descriptor option;
+  ?position: position option;
+  ?current_stop_sequence: int <ocaml repr="int32"> <biniou repr="int32"> option;
+  ?stop_id: string option;
+  ?current_status: vehicle_position_vehicle_stop_status option;
+  ?timestamp: int <ocaml repr="int64"> <biniou repr="int64"> option;
+  ?congestion_level: vehicle_position_congestion_level option;
+  ?occupancy_status: vehicle_position_occupancy_status option;
+}
+
+type time_range  = {
+  ?start: int <ocaml repr="int64"> <biniou repr="int64"> option;
+  ?end_: int <ocaml repr="int64"> <biniou repr="int64"> option;
+}
+
+type entity_selector  = {
+  ?agency_id: string option;
+  ?route_id: string option;
+  ?route_type: int <ocaml repr="int32"> <biniou repr="int32"> option;
+  ?trip: trip_descriptor option;
+  ?stop_id: string option;
+}
+
+type alert_cause  = 
+  [ Unknown_cause
+  | Other_cause
+  | Technical_problem
+  | Strike
+  | Demonstration
+  | Accident
+  | Holiday
+  | Weather
+  | Maintenance
+  | Construction
+  | Police_activity
+  | Medical_emergency ] <ocaml repr="classic">
+
+type alert_effect  = 
+  [ No_service
+  | Reduced_service
+  | Significant_delays
+  | Detour
+  | Additional_service
+  | Modified_service
+  | Other_effect
+  | Unknown_effect
+  | Stop_moved ] <ocaml repr="classic">
+
+type translated_string_translation  = {
+  text: string;
+  language: string option;
+}
+
+type translated_string  = {
+  translation: translated_string_translation list;
+}
+
+type alert  = {
+  active_period: time_range list;
+  informed_entity: entity_selector list;
+  ?cause: alert_cause option;
+  ?effect: alert_effect option;
+  ?url: translated_string option;
+  ?header_text: translated_string option;
+  ?description_text: translated_string option;
+}
+
+type feed_entity  = {
+  id: string;
+  ?is_deleted: bool option;
+  ?trip_update: trip_update option;
+  ?vehicle: vehicle_position option;
+  ?alert: alert option;
+}
+
+type feed_message  = {
+  header: feed_header;
+  entity: feed_entity list;
+}
