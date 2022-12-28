@@ -17,6 +17,9 @@ jobs:
         with:
           ocaml-compiler: 4.14.x
           dune-cache: true
+          
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
 
       - name: Deploy odoc to GitHub Pages
         uses: ocaml/setup-ocaml/deploy-doc@v2
