@@ -33,4 +33,5 @@ depends: [
   "cohttp-lwt-unix"
   "yojson"
   "ocaml-protoc"
+  "conf-protoc"
 ]
