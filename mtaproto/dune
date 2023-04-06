@@ -1,8 +1,8 @@
 (library
  (name mtaproto)
  (public_name mtaproto)
- (libraries pbrt yojson atdgen)
- (preprocess (pps ppx_jane))
+ (libraries core jsonaf ocaml-protoc-plugin ocaml-protoc-plugin.google_types)
+ (preprocess (pps ppx_jane ppx_jsonaf_conv))
 )
 
 (rule
@@ -10,50 +10,38 @@
  (action (with-stdout-to %{targets}
           (system "pkg-config protobuf --variable=includedir"))))
 
+; (rule
+;  (targets
+;   gtfs_realtime_types.mli gtfs_realtime_types.ml
+;   gtfs_realtime_pb.mli gtfs_realtime_pb.ml
+;   gtfs_realtime_pp.mli gtfs_realtime_pp.ml
+;  )
+;  (deps
+;   (:proto gtfs_realtime.proto)
+;   (package ocaml-protoc)
+;  )
+;  (action
+;   (run ocaml-protoc -I %{read-lines:google_include} -I . "-ml_out=." %{proto})))
+
 (rule
- (targets
-  gtfs_realtime_types.mli gtfs_realtime_types.ml
-  gtfs_realtime_pb.mli gtfs_realtime_pb.ml
-  gtfs_realtime_pp.mli gtfs_realtime_pp.ml
- )
+ (targets gtfs_realtime.ml)
  (deps
-  (:proto gtfs_realtime.proto) (package ocaml-protoc))
- (action
-  (run ocaml-protoc -I %{read-lines:google_include} -I . "-ml_out=." %{proto})))
-
-(rule
- (targets gtfs_realtime_t.ml gtfs_realtime_t.mli)
- (deps gtfs_realtime.atd (package atdgen))
- (action  (run atdgen -extend Gtfs_realtime_types -t %{deps}))
-)
-
-(rule
- (targets gtfs_realtime_j.ml gtfs_realtime_j.mli)
- (deps gtfs_realtime.atd (package atdgen))
- (action  (run atdgen -extend Gtfs_realtime_types -j -j-std %{deps}))
-)
-
-(rule
- (targets
-  nyct_subway_types.ml nyct_subway_types.mli
-  nyct_subway_pb.mli nyct_subway_pb.ml
-  nyct_subway_pp.mli nyct_subway_pp.ml
+  (:proto gtfs_realtime.proto)
+  ; (package ocaml-protoc)
  )
- (deps
-  (:proto nyct_subway.proto) (package ocaml-protoc))
  (action
-  (run ocaml-protoc -I %{read-lines:google_include} -I . "-ml_out=." %{proto})))
-
-(rule
- (targets nyct_subway_t.ml nyct_subway_t.mli)
- (deps nyct_subway.atd (package atdgen))
- (action  (run atdgen -extend Nyct_subway_types -t %{deps}))
+  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto}))
 )
 
 (rule
- (targets nyct_subway_j.ml nyct_subway_j.mli)
- (deps nyct_subway.atd (package atdgen))
- (action  (run atdgen -extend Nyct_subway_types -j -j-std %{deps}))
+ (targets nyct_subway.ml)
+ (deps
+  (:proto nyct_subway.proto)
+  (package ocaml-protoc)
+ )
+ (action
+  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto}))
 )
+
 
 (documentation)

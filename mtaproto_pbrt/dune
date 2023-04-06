@@ -1,0 +1,40 @@
+(library
+ (name mtaproto_pbrt)
+ ; (public_name mtaproto_pbrt)
+ (libraries core jsonaf pbrt)
+ (preprocess (pps ppx_jane ppx_jsonaf_conv))
+)
+
+(rule
+ (targets google_include)
+ (action (with-stdout-to %{targets}
+          (system "pkg-config protobuf --variable=includedir"))))
+
+(rule
+ (targets
+  gtfs_realtime_types.mli gtfs_realtime_types.ml
+  gtfs_realtime_pb.mli gtfs_realtime_pb.ml
+  gtfs_realtime_pp.mli gtfs_realtime_pp.ml
+ )
+ (deps
+  (:proto gtfs_realtime.proto)
+  (package ocaml-protoc)
+ )
+ (action
+  (run ocaml-protoc -I %{read-lines:google_include} -I . "-ml_out=." %{proto})))
+
+
+(rule
+ (targets
+   nyct_subway_types.mli nyct_subway_types.ml
+   nyct_subway_pb.mli nyct_subway_pb.ml
+   nyct_subway_pp.mli nyct_subway_pp.ml
+ )
+ (deps
+  (:proto nyct_subway.proto)
+  (package ocaml-protoc)
+ )
+ (action
+  (run ocaml-protoc -I %{read-lines:google_include} -I . "-ml_out=." %{proto})))
+
+(documentation)

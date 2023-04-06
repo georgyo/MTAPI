@@ -27,11 +27,15 @@ run-test: ["dune" "runtest" "-p" name]
 depends: [
   "dune"
   "ocamlformat" { >= "0.17.0" }
-  "alcotest" {with-test}
-  "core"
-  "atdgen"
-  "cohttp-lwt-unix"
-  "yojson"
-  "ocaml-protoc"
+  # "alcotest" {with-test}
+  # "core"
+  # "atdgen"
+  # "cohttp-lwt-unix"
+  # "yojson"
+  # "ocaml-protoc"
   "conf-protoc"
+  "ppx_jane"
+  "ppx_jsonaf_conv"
+  "jsonaf"
+  "ocaml-protoc-plugin"
 ]
