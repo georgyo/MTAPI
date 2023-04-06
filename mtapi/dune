@@ -1,10 +1,10 @@
 (executable
- (name        test)
- (libraries    mtaproto core unix cohttp-lwt-unix jsonaf)
- (preprocess (pps ppx_jane ppx_jsonaf_conv))
- (flags     :standard -w -32)
- (modules test)
-)
+ (name test)
+ (libraries mtaproto core unix cohttp-lwt-unix jsonaf)
+ (preprocess
+  (pps ppx_jane ppx_jsonaf_conv))
+ (flags :standard -w -32)
+ (modules test))
 
 ; (rule
 ;  (targets models_j.ml models_j.mli)
@@ -17,6 +17,5 @@
 ;  (deps models.atd (package atdgen))
 ;  (action  (run atdgen -t %{deps}))
 ; )
-
 
 (documentation)

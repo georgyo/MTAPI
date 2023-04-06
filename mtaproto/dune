@@ -2,13 +2,15 @@
  (name mtaproto)
  (public_name mtaproto)
  (libraries core jsonaf ocaml-protoc-plugin ocaml-protoc-plugin.google_types)
- (preprocess (pps ppx_jane ppx_jsonaf_conv))
-)
+ (preprocess
+  (pps ppx_jane ppx_jsonaf_conv)))
 
 (rule
  (targets google_include)
- (action (with-stdout-to %{targets}
-          (system "pkg-config protobuf --variable=includedir"))))
+ (action
+  (with-stdout-to
+   %{targets}
+   (system "pkg-config protobuf --variable=includedir"))))
 
 ; (rule
 ;  (targets
@@ -28,20 +30,16 @@
  (deps
   (:proto gtfs_realtime.proto)
   ; (package ocaml-protoc)
- )
+  )
  (action
-  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto}))
-)
+  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto})))
 
 (rule
  (targets nyct_subway.ml)
  (deps
   (:proto nyct_subway.proto)
-  (package ocaml-protoc)
- )
+  (package ocaml-protoc))
  (action
-  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto}))
-)
-
+  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto})))
 
 (documentation)
