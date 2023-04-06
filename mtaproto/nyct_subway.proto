@@ -1,6 +1,8 @@
 //
 // NYCT Subway extensions for the GTFS-realtime protocol.
 //
+syntax = "proto2";
+
 option java_package = "com.google.transit.realtime"; 
 
 import "gtfs_realtime.proto";

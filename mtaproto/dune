@@ -13,33 +13,20 @@
    (system "pkg-config protobuf --variable=includedir"))))
 
 ; (rule
-;  (targets
-;   gtfs_realtime_types.mli gtfs_realtime_types.ml
-;   gtfs_realtime_pb.mli gtfs_realtime_pb.ml
-;   gtfs_realtime_pp.mli gtfs_realtime_pp.ml
-;  )
+;  (targets gtfs_realtime.ml)
 ;  (deps
 ;   (:proto gtfs_realtime.proto)
-;   (package ocaml-protoc)
-;  )
+;   ; (package ocaml-protoc)
+;   )
 ;  (action
-;   (run ocaml-protoc -I %{read-lines:google_include} -I . "-ml_out=." %{proto})))
+;   (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto})))
 
-(rule
- (targets gtfs_realtime.ml)
- (deps
-  (:proto gtfs_realtime.proto)
-  ; (package ocaml-protoc)
-  )
- (action
-  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto})))
-
-(rule
- (targets nyct_subway.ml)
- (deps
-  (:proto nyct_subway.proto)
-  (package ocaml-protoc))
- (action
-  (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto})))
+; (rule
+;  (targets nyct_subway.ml)
+;  (deps
+;   (:proto nyct_subway.proto)
+;   (package ocaml-protoc))
+;  (action
+;   (run protoc -I %{read-lines:google_include} -I . --ocaml_out=. %{proto})))
 
 (documentation)

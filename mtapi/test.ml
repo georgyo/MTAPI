@@ -16,12 +16,14 @@ let headers =
   Cohttp.Header.init_with "User-Agent" "ocaml-mta"
   |> f3 Cohttp.Header.add "x-api-key" api_key
   |> Option.some
+;;
 
 let body =
-  Cohttp_lwt_unix.Client.get ?headers
-    (Uri.of_string
-       "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs")
+  Cohttp_lwt_unix.Client.get
+    ?headers
+    (Uri.of_string "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs")
   >>= fun (_, body) -> body |> Cohttp_lwt.Body.to_string
+;;
 
 let feedMessage =
   let body = Lwt_main.run body in
@@ -30,15 +32,21 @@ let feedMessage =
   |> function
   | Ok v -> v
   | Error e ->
-      failwith
-        (Printf.sprintf "Could not parse, got error %s"
-           (Ocaml_protoc_plugin.Result.show_error e))
+    failwith
+      (Printf.sprintf
+         "Could not parse, got error %s"
+         (Ocaml_protoc_plugin.Result.show_error e))
+;;
 
 (* |> Gtfs_realtime.Transit_realtime.FeedMessage.from_proto
    (* |> Gtfs_realtime_pb.decode_feed_message
    |> Gtfs_realtime_json.string_of_feed_message
    |> Stdio.print_endline *) *)
 
-let must = function Some x -> x | None -> failwith "fail"
+let must = function
+  | Some x -> x
+  | None -> failwith "fail"
+;;
+
 let ( |!> ) p f = must p |> f
 let () = Stdio.print_endline (feedMessage.header.timestamp |!> Int.to_string)

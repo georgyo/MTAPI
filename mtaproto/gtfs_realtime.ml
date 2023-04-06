@@ -18,285 +18,774 @@
 *)
 
 open Ocaml_protoc_plugin.Runtime [@@warning "-33"]
+
 module Transit_realtime = struct
   module rec FeedMessage : sig
-    val name': unit -> string
-    type t = { header: FeedHeader.t; entity: FeedEntity.t list; extensions': Runtime'.Extensions.t } 
-    val make : header:FeedHeader.t -> ?entity:FeedEntity.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+    val name' : unit -> string
+
+    type t =
+      { header : FeedHeader.t
+      ; entity : FeedEntity.t list
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  header:FeedHeader.t
+      -> ?entity:FeedEntity.t list
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     let name' () = "gtfs_realtime.transit_realtime.FeedMessage"
-    type t = { header: FeedHeader.t; entity: FeedEntity.t list; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ~header ?entity ?(extensions' = Runtime'.Extensions.default) () -> 
-      let entity = match entity with Some v -> v | None -> [] in
+
+    type t =
+      { header : FeedHeader.t
+      ; entity : FeedEntity.t list
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make ~header ?entity ?(extensions' = Runtime'.Extensions.default) () =
+      let entity =
+        match entity with
+        | Some v -> v
+        | None -> []
+      in
       { header; entity; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { header; entity; extensions' } -> f' extensions' header entity in
-      let spec = Runtime'.Serialize.C.( basic (1, (message (fun t -> FeedHeader.to_proto t)), required) ^:: repeated (2, (message (fun t -> FeedEntity.to_proto t)), not_packed) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { header; entity; extensions' } = f' extensions' header entity in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic (1, message (fun t -> FeedHeader.to_proto t), required)
+          ^:: repeated (2, message (fun t -> FeedEntity.to_proto t), not_packed)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' header entity -> { header; entity; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic (1, (message (fun t -> FeedHeader.from_proto t)), required) ^:: repeated (2, (message (fun t -> FeedEntity.from_proto t)), not_packed) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' header entity = { header; entity; extensions' } in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic (1, message (fun t -> FeedHeader.from_proto t), required)
+          ^:: repeated (2, message (fun t -> FeedEntity.from_proto t), not_packed)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and FeedHeader : sig
     module rec Incrementality : sig
-      type t = FULL_DATASET | DIFFERENTIAL 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
+      type t =
+        | FULL_DATASET
+        | DIFFERENTIAL
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
     end
-    val name': unit -> string
-    type t = { gtfs_realtime_version: string; incrementality: FeedHeader.Incrementality.t; timestamp: int option; extensions': Runtime'.Extensions.t } 
-    val make : gtfs_realtime_version:string -> ?incrementality:FeedHeader.Incrementality.t -> ?timestamp:int -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+
+    val name' : unit -> string
+
+    type t =
+      { gtfs_realtime_version : string
+      ; incrementality : FeedHeader.Incrementality.t
+      ; timestamp : int option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  gtfs_realtime_version:string
+      -> ?incrementality:FeedHeader.Incrementality.t
+      -> ?timestamp:int
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     module rec Incrementality : sig
-      type t = FULL_DATASET | DIFFERENTIAL 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
-    end = struct 
-      type t = FULL_DATASET | DIFFERENTIAL 
+      type t =
+        | FULL_DATASET
+        | DIFFERENTIAL
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
+    end = struct
+      type t =
+        | FULL_DATASET
+        | DIFFERENTIAL
+
       let to_int = function
         | FULL_DATASET -> 0
         | DIFFERENTIAL -> 1
-      
+      ;;
+
       let from_int = function
         | 0 -> Ok FULL_DATASET
         | 1 -> Ok DIFFERENTIAL
         | n -> Error (`Unknown_enum_value n)
-      
+      ;;
     end
+
     let name' () = "gtfs_realtime.transit_realtime.FeedHeader"
-    type t = { gtfs_realtime_version: string; incrementality: FeedHeader.Incrementality.t; timestamp: int option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ~gtfs_realtime_version ?incrementality ?timestamp ?(extensions' = Runtime'.Extensions.default) () -> 
-      let incrementality = match incrementality with Some v -> v | None -> FeedHeader.Incrementality.FULL_DATASET in
+
+    type t =
+      { gtfs_realtime_version : string
+      ; incrementality : FeedHeader.Incrementality.t
+      ; timestamp : int option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ~gtfs_realtime_version
+      ?incrementality
+      ?timestamp
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
+      let incrementality =
+        match incrementality with
+        | Some v -> v
+        | None -> FeedHeader.Incrementality.FULL_DATASET
+      in
       { gtfs_realtime_version; incrementality; timestamp; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { gtfs_realtime_version; incrementality; timestamp; extensions' } -> f' extensions' gtfs_realtime_version incrementality timestamp in
-      let spec = Runtime'.Serialize.C.( basic (1, string, required) ^:: basic (2, (enum FeedHeader.Incrementality.to_int), proto2 (FeedHeader.Incrementality.FULL_DATASET)) ^:: basic_opt (3, uint64_int) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { gtfs_realtime_version; incrementality; timestamp; extensions' } =
+        f' extensions' gtfs_realtime_version incrementality timestamp
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic (1, string, required)
+          ^:: basic
+                ( 2
+                , enum FeedHeader.Incrementality.to_int
+                , proto2 FeedHeader.Incrementality.FULL_DATASET )
+          ^:: basic_opt (3, uint64_int)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' gtfs_realtime_version incrementality timestamp -> { gtfs_realtime_version; incrementality; timestamp; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic (1, string, required) ^:: basic (2, (enum FeedHeader.Incrementality.from_int), proto2 (FeedHeader.Incrementality.FULL_DATASET)) ^:: basic_opt (3, uint64_int) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' gtfs_realtime_version incrementality timestamp =
+        { gtfs_realtime_version; incrementality; timestamp; extensions' }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic (1, string, required)
+          ^:: basic
+                ( 2
+                , enum FeedHeader.Incrementality.from_int
+                , proto2 FeedHeader.Incrementality.FULL_DATASET )
+          ^:: basic_opt (3, uint64_int)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and FeedEntity : sig
-    val name': unit -> string
-    type t = { id: string; is_deleted: bool; trip_update: TripUpdate.t option; vehicle: VehiclePosition.t option; alert: Alert.t option; extensions': Runtime'.Extensions.t } 
-    val make : id:string -> ?is_deleted:bool -> ?trip_update:TripUpdate.t -> ?vehicle:VehiclePosition.t -> ?alert:Alert.t -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+    val name' : unit -> string
+
+    type t =
+      { id : string
+      ; is_deleted : bool
+      ; trip_update : TripUpdate.t option
+      ; vehicle : VehiclePosition.t option
+      ; alert : Alert.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  id:string
+      -> ?is_deleted:bool
+      -> ?trip_update:TripUpdate.t
+      -> ?vehicle:VehiclePosition.t
+      -> ?alert:Alert.t
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     let name' () = "gtfs_realtime.transit_realtime.FeedEntity"
-    type t = { id: string; is_deleted: bool; trip_update: TripUpdate.t option; vehicle: VehiclePosition.t option; alert: Alert.t option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ~id ?is_deleted ?trip_update ?vehicle ?alert ?(extensions' = Runtime'.Extensions.default) () -> 
-      let is_deleted = match is_deleted with Some v -> v | None -> false in
+
+    type t =
+      { id : string
+      ; is_deleted : bool
+      ; trip_update : TripUpdate.t option
+      ; vehicle : VehiclePosition.t option
+      ; alert : Alert.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ~id
+      ?is_deleted
+      ?trip_update
+      ?vehicle
+      ?alert
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
+      let is_deleted =
+        match is_deleted with
+        | Some v -> v
+        | None -> false
+      in
       { id; is_deleted; trip_update; vehicle; alert; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { id; is_deleted; trip_update; vehicle; alert; extensions' } -> f' extensions' id is_deleted trip_update vehicle alert in
-      let spec = Runtime'.Serialize.C.( basic (1, string, required) ^:: basic (2, bool, proto2 (false)) ^:: basic_opt (3, (message (fun t -> TripUpdate.to_proto t))) ^:: basic_opt (4, (message (fun t -> VehiclePosition.to_proto t))) ^:: basic_opt (5, (message (fun t -> Alert.to_proto t))) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { id; is_deleted; trip_update; vehicle; alert; extensions' } =
+        f' extensions' id is_deleted trip_update vehicle alert
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic (1, string, required)
+          ^:: basic (2, bool, proto2 false)
+          ^:: basic_opt (3, message (fun t -> TripUpdate.to_proto t))
+          ^:: basic_opt (4, message (fun t -> VehiclePosition.to_proto t))
+          ^:: basic_opt (5, message (fun t -> Alert.to_proto t))
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' id is_deleted trip_update vehicle alert -> { id; is_deleted; trip_update; vehicle; alert; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic (1, string, required) ^:: basic (2, bool, proto2 (false)) ^:: basic_opt (3, (message (fun t -> TripUpdate.from_proto t))) ^:: basic_opt (4, (message (fun t -> VehiclePosition.from_proto t))) ^:: basic_opt (5, (message (fun t -> Alert.from_proto t))) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' id is_deleted trip_update vehicle alert =
+        { id; is_deleted; trip_update; vehicle; alert; extensions' }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic (1, string, required)
+          ^:: basic (2, bool, proto2 false)
+          ^:: basic_opt (3, message (fun t -> TripUpdate.from_proto t))
+          ^:: basic_opt (4, message (fun t -> VehiclePosition.from_proto t))
+          ^:: basic_opt (5, message (fun t -> Alert.from_proto t))
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and TripUpdate : sig
     module rec StopTimeEvent : sig
-      val name': unit -> string
-      type t = { delay: int option; time: int option; uncertainty: int option; extensions': Runtime'.Extensions.t } 
-      val make : ?delay:int -> ?time:int -> ?uncertainty:int -> ?extensions':Runtime'.Extensions.t -> unit -> t
-      val to_proto: t -> Runtime'.Writer.t
-      val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
+      val name' : unit -> string
+
+      type t =
+        { delay : int option
+        ; time : int option
+        ; uncertainty : int option
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      val make
+        :  ?delay:int
+        -> ?time:int
+        -> ?uncertainty:int
+        -> ?extensions':Runtime'.Extensions.t
+        -> unit
+        -> t
+
+      val to_proto : t -> Runtime'.Writer.t
+      val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
     end
+
     and StopTimeUpdate : sig
       module rec ScheduleRelationship : sig
-        type t = SCHEDULED | SKIPPED | NO_DATA 
-        val to_int: t -> int
-        val from_int: int -> (t, [> Runtime'.Result.error]) result
+        type t =
+          | SCHEDULED
+          | SKIPPED
+          | NO_DATA
+
+        val to_int : t -> int
+        val from_int : int -> (t, [> Runtime'.Result.error ]) result
       end
-      val name': unit -> string
-      type t = { stop_sequence: int option; stop_id: string option; arrival: TripUpdate.StopTimeEvent.t option; departure: TripUpdate.StopTimeEvent.t option; schedule_relationship: TripUpdate.StopTimeUpdate.ScheduleRelationship.t; extensions': Runtime'.Extensions.t } 
-      val make : ?stop_sequence:int -> ?stop_id:string -> ?arrival:TripUpdate.StopTimeEvent.t -> ?departure:TripUpdate.StopTimeEvent.t -> ?schedule_relationship:TripUpdate.StopTimeUpdate.ScheduleRelationship.t -> ?extensions':Runtime'.Extensions.t -> unit -> t
-      val to_proto: t -> Runtime'.Writer.t
-      val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
+
+      val name' : unit -> string
+
+      type t =
+        { stop_sequence : int option
+        ; stop_id : string option
+        ; arrival : TripUpdate.StopTimeEvent.t option
+        ; departure : TripUpdate.StopTimeEvent.t option
+        ; schedule_relationship : TripUpdate.StopTimeUpdate.ScheduleRelationship.t
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      val make
+        :  ?stop_sequence:int
+        -> ?stop_id:string
+        -> ?arrival:TripUpdate.StopTimeEvent.t
+        -> ?departure:TripUpdate.StopTimeEvent.t
+        -> ?schedule_relationship:TripUpdate.StopTimeUpdate.ScheduleRelationship.t
+        -> ?extensions':Runtime'.Extensions.t
+        -> unit
+        -> t
+
+      val to_proto : t -> Runtime'.Writer.t
+      val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
     end
-    val name': unit -> string
-    type t = { trip: TripDescriptor.t; vehicle: VehicleDescriptor.t option; stop_time_update: TripUpdate.StopTimeUpdate.t list; timestamp: int option; delay: int option; extensions': Runtime'.Extensions.t } 
-    val make : trip:TripDescriptor.t -> ?vehicle:VehicleDescriptor.t -> ?stop_time_update:TripUpdate.StopTimeUpdate.t list -> ?timestamp:int -> ?delay:int -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+
+    val name' : unit -> string
+
+    type t =
+      { trip : TripDescriptor.t
+      ; vehicle : VehicleDescriptor.t option
+      ; stop_time_update : TripUpdate.StopTimeUpdate.t list
+      ; timestamp : int option
+      ; delay : int option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  trip:TripDescriptor.t
+      -> ?vehicle:VehicleDescriptor.t
+      -> ?stop_time_update:TripUpdate.StopTimeUpdate.t list
+      -> ?timestamp:int
+      -> ?delay:int
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     module rec StopTimeEvent : sig
-      val name': unit -> string
-      type t = { delay: int option; time: int option; uncertainty: int option; extensions': Runtime'.Extensions.t } 
-      val make : ?delay:int -> ?time:int -> ?uncertainty:int -> ?extensions':Runtime'.Extensions.t -> unit -> t
-      val to_proto: t -> Runtime'.Writer.t
-      val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-    end = struct 
+      val name' : unit -> string
+
+      type t =
+        { delay : int option
+        ; time : int option
+        ; uncertainty : int option
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      val make
+        :  ?delay:int
+        -> ?time:int
+        -> ?uncertainty:int
+        -> ?extensions':Runtime'.Extensions.t
+        -> unit
+        -> t
+
+      val to_proto : t -> Runtime'.Writer.t
+      val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+    end = struct
       let name' () = "gtfs_realtime.transit_realtime.TripUpdate.StopTimeEvent"
-      type t = { delay: int option; time: int option; uncertainty: int option; extensions': Runtime'.Extensions.t }
-      let make =
-        fun ?delay ?time ?uncertainty ?(extensions' = Runtime'.Extensions.default) () -> 
-        
+
+      type t =
+        { delay : int option
+        ; time : int option
+        ; uncertainty : int option
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      let make ?delay ?time ?uncertainty ?(extensions' = Runtime'.Extensions.default) () =
         { delay; time; uncertainty; extensions' }
-      
+      ;;
+
       let to_proto =
-        let apply = fun ~f:f' { delay; time; uncertainty; extensions' } -> f' extensions' delay time uncertainty in
-        let spec = Runtime'.Serialize.C.( basic_opt (1, int32_int) ^:: basic_opt (2, int64_int) ^:: basic_opt (3, int32_int) ^:: nil ) in
-        let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+        let apply ~f:f' { delay; time; uncertainty; extensions' } =
+          f' extensions' delay time uncertainty
+        in
+        let spec =
+          Runtime'.Serialize.C.(
+            basic_opt (1, int32_int)
+            ^:: basic_opt (2, int64_int)
+            ^:: basic_opt (3, int32_int)
+            ^:: nil)
+        in
+        let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
         fun t -> apply ~f:serialize t
-      
+      ;;
+
       let from_proto =
-        let constructor = fun extensions' delay time uncertainty -> { delay; time; uncertainty; extensions' } in
-        let spec = Runtime'.Deserialize.C.( basic_opt (1, int32_int) ^:: basic_opt (2, int64_int) ^:: basic_opt (3, int32_int) ^:: nil ) in
-        let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+        let constructor extensions' delay time uncertainty =
+          { delay; time; uncertainty; extensions' }
+        in
+        let spec =
+          Runtime'.Deserialize.C.(
+            basic_opt (1, int32_int)
+            ^:: basic_opt (2, int64_int)
+            ^:: basic_opt (3, int32_int)
+            ^:: nil)
+        in
+        let deserialize =
+          Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+        in
         fun writer -> deserialize writer |> Runtime'.Result.open_error
-      
+      ;;
     end
+
     and StopTimeUpdate : sig
       module rec ScheduleRelationship : sig
-        type t = SCHEDULED | SKIPPED | NO_DATA 
-        val to_int: t -> int
-        val from_int: int -> (t, [> Runtime'.Result.error]) result
+        type t =
+          | SCHEDULED
+          | SKIPPED
+          | NO_DATA
+
+        val to_int : t -> int
+        val from_int : int -> (t, [> Runtime'.Result.error ]) result
       end
-      val name': unit -> string
-      type t = { stop_sequence: int option; stop_id: string option; arrival: TripUpdate.StopTimeEvent.t option; departure: TripUpdate.StopTimeEvent.t option; schedule_relationship: TripUpdate.StopTimeUpdate.ScheduleRelationship.t; extensions': Runtime'.Extensions.t } 
-      val make : ?stop_sequence:int -> ?stop_id:string -> ?arrival:TripUpdate.StopTimeEvent.t -> ?departure:TripUpdate.StopTimeEvent.t -> ?schedule_relationship:TripUpdate.StopTimeUpdate.ScheduleRelationship.t -> ?extensions':Runtime'.Extensions.t -> unit -> t
-      val to_proto: t -> Runtime'.Writer.t
-      val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-    end = struct 
+
+      val name' : unit -> string
+
+      type t =
+        { stop_sequence : int option
+        ; stop_id : string option
+        ; arrival : TripUpdate.StopTimeEvent.t option
+        ; departure : TripUpdate.StopTimeEvent.t option
+        ; schedule_relationship : TripUpdate.StopTimeUpdate.ScheduleRelationship.t
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      val make
+        :  ?stop_sequence:int
+        -> ?stop_id:string
+        -> ?arrival:TripUpdate.StopTimeEvent.t
+        -> ?departure:TripUpdate.StopTimeEvent.t
+        -> ?schedule_relationship:TripUpdate.StopTimeUpdate.ScheduleRelationship.t
+        -> ?extensions':Runtime'.Extensions.t
+        -> unit
+        -> t
+
+      val to_proto : t -> Runtime'.Writer.t
+      val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+    end = struct
       module rec ScheduleRelationship : sig
-        type t = SCHEDULED | SKIPPED | NO_DATA 
-        val to_int: t -> int
-        val from_int: int -> (t, [> Runtime'.Result.error]) result
-      end = struct 
-        type t = SCHEDULED | SKIPPED | NO_DATA 
+        type t =
+          | SCHEDULED
+          | SKIPPED
+          | NO_DATA
+
+        val to_int : t -> int
+        val from_int : int -> (t, [> Runtime'.Result.error ]) result
+      end = struct
+        type t =
+          | SCHEDULED
+          | SKIPPED
+          | NO_DATA
+
         let to_int = function
           | SCHEDULED -> 0
           | SKIPPED -> 1
           | NO_DATA -> 2
-        
+        ;;
+
         let from_int = function
           | 0 -> Ok SCHEDULED
           | 1 -> Ok SKIPPED
           | 2 -> Ok NO_DATA
           | n -> Error (`Unknown_enum_value n)
-        
+        ;;
       end
+
       let name' () = "gtfs_realtime.transit_realtime.TripUpdate.StopTimeUpdate"
-      type t = { stop_sequence: int option; stop_id: string option; arrival: TripUpdate.StopTimeEvent.t option; departure: TripUpdate.StopTimeEvent.t option; schedule_relationship: TripUpdate.StopTimeUpdate.ScheduleRelationship.t; extensions': Runtime'.Extensions.t }
-      let make =
-        fun ?stop_sequence ?stop_id ?arrival ?departure ?schedule_relationship ?(extensions' = Runtime'.Extensions.default) () -> 
-        let schedule_relationship = match schedule_relationship with Some v -> v | None -> TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED in
+
+      type t =
+        { stop_sequence : int option
+        ; stop_id : string option
+        ; arrival : TripUpdate.StopTimeEvent.t option
+        ; departure : TripUpdate.StopTimeEvent.t option
+        ; schedule_relationship : TripUpdate.StopTimeUpdate.ScheduleRelationship.t
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      let make
+        ?stop_sequence
+        ?stop_id
+        ?arrival
+        ?departure
+        ?schedule_relationship
+        ?(extensions' = Runtime'.Extensions.default)
+        ()
+        =
+        let schedule_relationship =
+          match schedule_relationship with
+          | Some v -> v
+          | None -> TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED
+        in
         { stop_sequence; stop_id; arrival; departure; schedule_relationship; extensions' }
-      
+      ;;
+
       let to_proto =
-        let apply = fun ~f:f' { stop_sequence; stop_id; arrival; departure; schedule_relationship; extensions' } -> f' extensions' stop_sequence stop_id arrival departure schedule_relationship in
-        let spec = Runtime'.Serialize.C.( basic_opt (1, uint32_int) ^:: basic_opt (4, string) ^:: basic_opt (2, (message (fun t -> TripUpdate.StopTimeEvent.to_proto t))) ^:: basic_opt (3, (message (fun t -> TripUpdate.StopTimeEvent.to_proto t))) ^:: basic (5, (enum TripUpdate.StopTimeUpdate.ScheduleRelationship.to_int), proto2 (TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED)) ^:: nil ) in
-        let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+        let apply
+          ~f:f'
+          { stop_sequence
+          ; stop_id
+          ; arrival
+          ; departure
+          ; schedule_relationship
+          ; extensions'
+          }
+          =
+          f' extensions' stop_sequence stop_id arrival departure schedule_relationship
+        in
+        let spec =
+          Runtime'.Serialize.C.(
+            basic_opt (1, uint32_int)
+            ^:: basic_opt (4, string)
+            ^:: basic_opt (2, message (fun t -> TripUpdate.StopTimeEvent.to_proto t))
+            ^:: basic_opt (3, message (fun t -> TripUpdate.StopTimeEvent.to_proto t))
+            ^:: basic
+                  ( 5
+                  , enum TripUpdate.StopTimeUpdate.ScheduleRelationship.to_int
+                  , proto2 TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED )
+            ^:: nil)
+        in
+        let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
         fun t -> apply ~f:serialize t
-      
+      ;;
+
       let from_proto =
-        let constructor = fun extensions' stop_sequence stop_id arrival departure schedule_relationship -> { stop_sequence; stop_id; arrival; departure; schedule_relationship; extensions' } in
-        let spec = Runtime'.Deserialize.C.( basic_opt (1, uint32_int) ^:: basic_opt (4, string) ^:: basic_opt (2, (message (fun t -> TripUpdate.StopTimeEvent.from_proto t))) ^:: basic_opt (3, (message (fun t -> TripUpdate.StopTimeEvent.from_proto t))) ^:: basic (5, (enum TripUpdate.StopTimeUpdate.ScheduleRelationship.from_int), proto2 (TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED)) ^:: nil ) in
-        let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+        let constructor
+          extensions'
+          stop_sequence
+          stop_id
+          arrival
+          departure
+          schedule_relationship
+          =
+          { stop_sequence
+          ; stop_id
+          ; arrival
+          ; departure
+          ; schedule_relationship
+          ; extensions'
+          }
+        in
+        let spec =
+          Runtime'.Deserialize.C.(
+            basic_opt (1, uint32_int)
+            ^:: basic_opt (4, string)
+            ^:: basic_opt (2, message (fun t -> TripUpdate.StopTimeEvent.from_proto t))
+            ^:: basic_opt (3, message (fun t -> TripUpdate.StopTimeEvent.from_proto t))
+            ^:: basic
+                  ( 5
+                  , enum TripUpdate.StopTimeUpdate.ScheduleRelationship.from_int
+                  , proto2 TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED )
+            ^:: nil)
+        in
+        let deserialize =
+          Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+        in
         fun writer -> deserialize writer |> Runtime'.Result.open_error
-      
+      ;;
     end
+
     let name' () = "gtfs_realtime.transit_realtime.TripUpdate"
-    type t = { trip: TripDescriptor.t; vehicle: VehicleDescriptor.t option; stop_time_update: TripUpdate.StopTimeUpdate.t list; timestamp: int option; delay: int option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ~trip ?vehicle ?stop_time_update ?timestamp ?delay ?(extensions' = Runtime'.Extensions.default) () -> 
-      let stop_time_update = match stop_time_update with Some v -> v | None -> [] in
+
+    type t =
+      { trip : TripDescriptor.t
+      ; vehicle : VehicleDescriptor.t option
+      ; stop_time_update : TripUpdate.StopTimeUpdate.t list
+      ; timestamp : int option
+      ; delay : int option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ~trip
+      ?vehicle
+      ?stop_time_update
+      ?timestamp
+      ?delay
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
+      let stop_time_update =
+        match stop_time_update with
+        | Some v -> v
+        | None -> []
+      in
       { trip; vehicle; stop_time_update; timestamp; delay; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { trip; vehicle; stop_time_update; timestamp; delay; extensions' } -> f' extensions' trip vehicle stop_time_update timestamp delay in
-      let spec = Runtime'.Serialize.C.( basic (1, (message (fun t -> TripDescriptor.to_proto t)), required) ^:: basic_opt (3, (message (fun t -> VehicleDescriptor.to_proto t))) ^:: repeated (2, (message (fun t -> TripUpdate.StopTimeUpdate.to_proto t)), not_packed) ^:: basic_opt (4, uint64_int) ^:: basic_opt (5, int32_int) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { trip; vehicle; stop_time_update; timestamp; delay; extensions' } =
+        f' extensions' trip vehicle stop_time_update timestamp delay
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic (1, message (fun t -> TripDescriptor.to_proto t), required)
+          ^:: basic_opt (3, message (fun t -> VehicleDescriptor.to_proto t))
+          ^:: repeated
+                (2, message (fun t -> TripUpdate.StopTimeUpdate.to_proto t), not_packed)
+          ^:: basic_opt (4, uint64_int)
+          ^:: basic_opt (5, int32_int)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' trip vehicle stop_time_update timestamp delay -> { trip; vehicle; stop_time_update; timestamp; delay; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic (1, (message (fun t -> TripDescriptor.from_proto t)), required) ^:: basic_opt (3, (message (fun t -> VehicleDescriptor.from_proto t))) ^:: repeated (2, (message (fun t -> TripUpdate.StopTimeUpdate.from_proto t)), not_packed) ^:: basic_opt (4, uint64_int) ^:: basic_opt (5, int32_int) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' trip vehicle stop_time_update timestamp delay =
+        { trip; vehicle; stop_time_update; timestamp; delay; extensions' }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic (1, message (fun t -> TripDescriptor.from_proto t), required)
+          ^:: basic_opt (3, message (fun t -> VehicleDescriptor.from_proto t))
+          ^:: repeated
+                (2, message (fun t -> TripUpdate.StopTimeUpdate.from_proto t), not_packed)
+          ^:: basic_opt (4, uint64_int)
+          ^:: basic_opt (5, int32_int)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and VehiclePosition : sig
     module rec VehicleStopStatus : sig
-      type t = INCOMING_AT | STOPPED_AT | IN_TRANSIT_TO 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
+      type t =
+        | INCOMING_AT
+        | STOPPED_AT
+        | IN_TRANSIT_TO
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
     end
+
     and CongestionLevel : sig
-      type t = UNKNOWN_CONGESTION_LEVEL | RUNNING_SMOOTHLY | STOP_AND_GO | CONGESTION | SEVERE_CONGESTION 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
+      type t =
+        | UNKNOWN_CONGESTION_LEVEL
+        | RUNNING_SMOOTHLY
+        | STOP_AND_GO
+        | CONGESTION
+        | SEVERE_CONGESTION
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
     end
+
     and OccupancyStatus : sig
-      type t = EMPTY | MANY_SEATS_AVAILABLE | FEW_SEATS_AVAILABLE | STANDING_ROOM_ONLY | CRUSHED_STANDING_ROOM_ONLY | FULL | NOT_ACCEPTING_PASSENGERS 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
+      type t =
+        | EMPTY
+        | MANY_SEATS_AVAILABLE
+        | FEW_SEATS_AVAILABLE
+        | STANDING_ROOM_ONLY
+        | CRUSHED_STANDING_ROOM_ONLY
+        | FULL
+        | NOT_ACCEPTING_PASSENGERS
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
     end
-    val name': unit -> string
-    type t = { trip: TripDescriptor.t option; vehicle: VehicleDescriptor.t option; position: Position.t option; current_stop_sequence: int option; stop_id: string option; current_status: VehiclePosition.VehicleStopStatus.t; timestamp: int option; congestion_level: VehiclePosition.CongestionLevel.t option; occupancy_status: VehiclePosition.OccupancyStatus.t option; extensions': Runtime'.Extensions.t } 
-    val make : ?trip:TripDescriptor.t -> ?vehicle:VehicleDescriptor.t -> ?position:Position.t -> ?current_stop_sequence:int -> ?stop_id:string -> ?current_status:VehiclePosition.VehicleStopStatus.t -> ?timestamp:int -> ?congestion_level:VehiclePosition.CongestionLevel.t -> ?occupancy_status:VehiclePosition.OccupancyStatus.t -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+
+    val name' : unit -> string
+
+    type t =
+      { trip : TripDescriptor.t option
+      ; vehicle : VehicleDescriptor.t option
+      ; position : Position.t option
+      ; current_stop_sequence : int option
+      ; stop_id : string option
+      ; current_status : VehiclePosition.VehicleStopStatus.t
+      ; timestamp : int option
+      ; congestion_level : VehiclePosition.CongestionLevel.t option
+      ; occupancy_status : VehiclePosition.OccupancyStatus.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  ?trip:TripDescriptor.t
+      -> ?vehicle:VehicleDescriptor.t
+      -> ?position:Position.t
+      -> ?current_stop_sequence:int
+      -> ?stop_id:string
+      -> ?current_status:VehiclePosition.VehicleStopStatus.t
+      -> ?timestamp:int
+      -> ?congestion_level:VehiclePosition.CongestionLevel.t
+      -> ?occupancy_status:VehiclePosition.OccupancyStatus.t
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     module rec VehicleStopStatus : sig
-      type t = INCOMING_AT | STOPPED_AT | IN_TRANSIT_TO 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
-    end = struct 
-      type t = INCOMING_AT | STOPPED_AT | IN_TRANSIT_TO 
+      type t =
+        | INCOMING_AT
+        | STOPPED_AT
+        | IN_TRANSIT_TO
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
+    end = struct
+      type t =
+        | INCOMING_AT
+        | STOPPED_AT
+        | IN_TRANSIT_TO
+
       let to_int = function
         | INCOMING_AT -> 0
         | STOPPED_AT -> 1
         | IN_TRANSIT_TO -> 2
-      
+      ;;
+
       let from_int = function
         | 0 -> Ok INCOMING_AT
         | 1 -> Ok STOPPED_AT
         | 2 -> Ok IN_TRANSIT_TO
         | n -> Error (`Unknown_enum_value n)
-      
+      ;;
     end
+
     and CongestionLevel : sig
-      type t = UNKNOWN_CONGESTION_LEVEL | RUNNING_SMOOTHLY | STOP_AND_GO | CONGESTION | SEVERE_CONGESTION 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
-    end = struct 
-      type t = UNKNOWN_CONGESTION_LEVEL | RUNNING_SMOOTHLY | STOP_AND_GO | CONGESTION | SEVERE_CONGESTION 
+      type t =
+        | UNKNOWN_CONGESTION_LEVEL
+        | RUNNING_SMOOTHLY
+        | STOP_AND_GO
+        | CONGESTION
+        | SEVERE_CONGESTION
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
+    end = struct
+      type t =
+        | UNKNOWN_CONGESTION_LEVEL
+        | RUNNING_SMOOTHLY
+        | STOP_AND_GO
+        | CONGESTION
+        | SEVERE_CONGESTION
+
       let to_int = function
         | UNKNOWN_CONGESTION_LEVEL -> 0
         | RUNNING_SMOOTHLY -> 1
         | STOP_AND_GO -> 2
         | CONGESTION -> 3
         | SEVERE_CONGESTION -> 4
-      
+      ;;
+
       let from_int = function
         | 0 -> Ok UNKNOWN_CONGESTION_LEVEL
         | 1 -> Ok RUNNING_SMOOTHLY
@@ -304,14 +793,31 @@ module Transit_realtime = struct
         | 3 -> Ok CONGESTION
         | 4 -> Ok SEVERE_CONGESTION
         | n -> Error (`Unknown_enum_value n)
-      
+      ;;
     end
+
     and OccupancyStatus : sig
-      type t = EMPTY | MANY_SEATS_AVAILABLE | FEW_SEATS_AVAILABLE | STANDING_ROOM_ONLY | CRUSHED_STANDING_ROOM_ONLY | FULL | NOT_ACCEPTING_PASSENGERS 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
-    end = struct 
-      type t = EMPTY | MANY_SEATS_AVAILABLE | FEW_SEATS_AVAILABLE | STANDING_ROOM_ONLY | CRUSHED_STANDING_ROOM_ONLY | FULL | NOT_ACCEPTING_PASSENGERS 
+      type t =
+        | EMPTY
+        | MANY_SEATS_AVAILABLE
+        | FEW_SEATS_AVAILABLE
+        | STANDING_ROOM_ONLY
+        | CRUSHED_STANDING_ROOM_ONLY
+        | FULL
+        | NOT_ACCEPTING_PASSENGERS
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
+    end = struct
+      type t =
+        | EMPTY
+        | MANY_SEATS_AVAILABLE
+        | FEW_SEATS_AVAILABLE
+        | STANDING_ROOM_ONLY
+        | CRUSHED_STANDING_ROOM_ONLY
+        | FULL
+        | NOT_ACCEPTING_PASSENGERS
+
       let to_int = function
         | EMPTY -> 0
         | MANY_SEATS_AVAILABLE -> 1
@@ -320,7 +826,8 @@ module Transit_realtime = struct
         | CRUSHED_STANDING_ROOM_ONLY -> 4
         | FULL -> 5
         | NOT_ACCEPTING_PASSENGERS -> 6
-      
+      ;;
+
       let from_int = function
         | 0 -> Ok EMPTY
         | 1 -> Ok MANY_SEATS_AVAILABLE
@@ -330,51 +837,246 @@ module Transit_realtime = struct
         | 5 -> Ok FULL
         | 6 -> Ok NOT_ACCEPTING_PASSENGERS
         | n -> Error (`Unknown_enum_value n)
-      
+      ;;
     end
+
     let name' () = "gtfs_realtime.transit_realtime.VehiclePosition"
-    type t = { trip: TripDescriptor.t option; vehicle: VehicleDescriptor.t option; position: Position.t option; current_stop_sequence: int option; stop_id: string option; current_status: VehiclePosition.VehicleStopStatus.t; timestamp: int option; congestion_level: VehiclePosition.CongestionLevel.t option; occupancy_status: VehiclePosition.OccupancyStatus.t option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ?trip ?vehicle ?position ?current_stop_sequence ?stop_id ?current_status ?timestamp ?congestion_level ?occupancy_status ?(extensions' = Runtime'.Extensions.default) () -> 
-      let current_status = match current_status with Some v -> v | None -> VehiclePosition.VehicleStopStatus.IN_TRANSIT_TO in
-      { trip; vehicle; position; current_stop_sequence; stop_id; current_status; timestamp; congestion_level; occupancy_status; extensions' }
-    
+
+    type t =
+      { trip : TripDescriptor.t option
+      ; vehicle : VehicleDescriptor.t option
+      ; position : Position.t option
+      ; current_stop_sequence : int option
+      ; stop_id : string option
+      ; current_status : VehiclePosition.VehicleStopStatus.t
+      ; timestamp : int option
+      ; congestion_level : VehiclePosition.CongestionLevel.t option
+      ; occupancy_status : VehiclePosition.OccupancyStatus.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ?trip
+      ?vehicle
+      ?position
+      ?current_stop_sequence
+      ?stop_id
+      ?current_status
+      ?timestamp
+      ?congestion_level
+      ?occupancy_status
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
+      let current_status =
+        match current_status with
+        | Some v -> v
+        | None -> VehiclePosition.VehicleStopStatus.IN_TRANSIT_TO
+      in
+      { trip
+      ; vehicle
+      ; position
+      ; current_stop_sequence
+      ; stop_id
+      ; current_status
+      ; timestamp
+      ; congestion_level
+      ; occupancy_status
+      ; extensions'
+      }
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { trip; vehicle; position; current_stop_sequence; stop_id; current_status; timestamp; congestion_level; occupancy_status; extensions' } -> f' extensions' trip vehicle position current_stop_sequence stop_id current_status timestamp congestion_level occupancy_status in
-      let spec = Runtime'.Serialize.C.( basic_opt (1, (message (fun t -> TripDescriptor.to_proto t))) ^:: basic_opt (8, (message (fun t -> VehicleDescriptor.to_proto t))) ^:: basic_opt (2, (message (fun t -> Position.to_proto t))) ^:: basic_opt (3, uint32_int) ^:: basic_opt (7, string) ^:: basic (4, (enum VehiclePosition.VehicleStopStatus.to_int), proto2 (VehiclePosition.VehicleStopStatus.IN_TRANSIT_TO)) ^:: basic_opt (5, uint64_int) ^:: basic_opt (6, (enum VehiclePosition.CongestionLevel.to_int)) ^:: basic_opt (9, (enum VehiclePosition.OccupancyStatus.to_int)) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply
+        ~f:f'
+        { trip
+        ; vehicle
+        ; position
+        ; current_stop_sequence
+        ; stop_id
+        ; current_status
+        ; timestamp
+        ; congestion_level
+        ; occupancy_status
+        ; extensions'
+        }
+        =
+        f'
+          extensions'
+          trip
+          vehicle
+          position
+          current_stop_sequence
+          stop_id
+          current_status
+          timestamp
+          congestion_level
+          occupancy_status
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic_opt (1, message (fun t -> TripDescriptor.to_proto t))
+          ^:: basic_opt (8, message (fun t -> VehicleDescriptor.to_proto t))
+          ^:: basic_opt (2, message (fun t -> Position.to_proto t))
+          ^:: basic_opt (3, uint32_int)
+          ^:: basic_opt (7, string)
+          ^:: basic
+                ( 4
+                , enum VehiclePosition.VehicleStopStatus.to_int
+                , proto2 VehiclePosition.VehicleStopStatus.IN_TRANSIT_TO )
+          ^:: basic_opt (5, uint64_int)
+          ^:: basic_opt (6, enum VehiclePosition.CongestionLevel.to_int)
+          ^:: basic_opt (9, enum VehiclePosition.OccupancyStatus.to_int)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' trip vehicle position current_stop_sequence stop_id current_status timestamp congestion_level occupancy_status -> { trip; vehicle; position; current_stop_sequence; stop_id; current_status; timestamp; congestion_level; occupancy_status; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic_opt (1, (message (fun t -> TripDescriptor.from_proto t))) ^:: basic_opt (8, (message (fun t -> VehicleDescriptor.from_proto t))) ^:: basic_opt (2, (message (fun t -> Position.from_proto t))) ^:: basic_opt (3, uint32_int) ^:: basic_opt (7, string) ^:: basic (4, (enum VehiclePosition.VehicleStopStatus.from_int), proto2 (VehiclePosition.VehicleStopStatus.IN_TRANSIT_TO)) ^:: basic_opt (5, uint64_int) ^:: basic_opt (6, (enum VehiclePosition.CongestionLevel.from_int)) ^:: basic_opt (9, (enum VehiclePosition.OccupancyStatus.from_int)) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor
+        extensions'
+        trip
+        vehicle
+        position
+        current_stop_sequence
+        stop_id
+        current_status
+        timestamp
+        congestion_level
+        occupancy_status
+        =
+        { trip
+        ; vehicle
+        ; position
+        ; current_stop_sequence
+        ; stop_id
+        ; current_status
+        ; timestamp
+        ; congestion_level
+        ; occupancy_status
+        ; extensions'
+        }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic_opt (1, message (fun t -> TripDescriptor.from_proto t))
+          ^:: basic_opt (8, message (fun t -> VehicleDescriptor.from_proto t))
+          ^:: basic_opt (2, message (fun t -> Position.from_proto t))
+          ^:: basic_opt (3, uint32_int)
+          ^:: basic_opt (7, string)
+          ^:: basic
+                ( 4
+                , enum VehiclePosition.VehicleStopStatus.from_int
+                , proto2 VehiclePosition.VehicleStopStatus.IN_TRANSIT_TO )
+          ^:: basic_opt (5, uint64_int)
+          ^:: basic_opt (6, enum VehiclePosition.CongestionLevel.from_int)
+          ^:: basic_opt (9, enum VehiclePosition.OccupancyStatus.from_int)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and Alert : sig
     module rec Cause : sig
-      type t = UNKNOWN_CAUSE | OTHER_CAUSE | TECHNICAL_PROBLEM | STRIKE | DEMONSTRATION | ACCIDENT | HOLIDAY | WEATHER | MAINTENANCE | CONSTRUCTION | POLICE_ACTIVITY | MEDICAL_EMERGENCY 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
+      type t =
+        | UNKNOWN_CAUSE
+        | OTHER_CAUSE
+        | TECHNICAL_PROBLEM
+        | STRIKE
+        | DEMONSTRATION
+        | ACCIDENT
+        | HOLIDAY
+        | WEATHER
+        | MAINTENANCE
+        | CONSTRUCTION
+        | POLICE_ACTIVITY
+        | MEDICAL_EMERGENCY
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
     end
+
     and Effect : sig
-      type t = NO_SERVICE | REDUCED_SERVICE | SIGNIFICANT_DELAYS | DETOUR | ADDITIONAL_SERVICE | MODIFIED_SERVICE | OTHER_EFFECT | UNKNOWN_EFFECT | STOP_MOVED 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
+      type t =
+        | NO_SERVICE
+        | REDUCED_SERVICE
+        | SIGNIFICANT_DELAYS
+        | DETOUR
+        | ADDITIONAL_SERVICE
+        | MODIFIED_SERVICE
+        | OTHER_EFFECT
+        | UNKNOWN_EFFECT
+        | STOP_MOVED
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
     end
-    val name': unit -> string
-    type t = { active_period: TimeRange.t list; informed_entity: EntitySelector.t list; cause: Alert.Cause.t; effect: Alert.Effect.t; url: TranslatedString.t option; header_text: TranslatedString.t option; description_text: TranslatedString.t option; extensions': Runtime'.Extensions.t } 
-    val make : ?active_period:TimeRange.t list -> ?informed_entity:EntitySelector.t list -> ?cause:Alert.Cause.t -> ?effect:Alert.Effect.t -> ?url:TranslatedString.t -> ?header_text:TranslatedString.t -> ?description_text:TranslatedString.t -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+
+    val name' : unit -> string
+
+    type t =
+      { active_period : TimeRange.t list
+      ; informed_entity : EntitySelector.t list
+      ; cause : Alert.Cause.t
+      ; effect : Alert.Effect.t
+      ; url : TranslatedString.t option
+      ; header_text : TranslatedString.t option
+      ; description_text : TranslatedString.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  ?active_period:TimeRange.t list
+      -> ?informed_entity:EntitySelector.t list
+      -> ?cause:Alert.Cause.t
+      -> ?effect:Alert.Effect.t
+      -> ?url:TranslatedString.t
+      -> ?header_text:TranslatedString.t
+      -> ?description_text:TranslatedString.t
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     module rec Cause : sig
-      type t = UNKNOWN_CAUSE | OTHER_CAUSE | TECHNICAL_PROBLEM | STRIKE | DEMONSTRATION | ACCIDENT | HOLIDAY | WEATHER | MAINTENANCE | CONSTRUCTION | POLICE_ACTIVITY | MEDICAL_EMERGENCY 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
-    end = struct 
-      type t = UNKNOWN_CAUSE | OTHER_CAUSE | TECHNICAL_PROBLEM | STRIKE | DEMONSTRATION | ACCIDENT | HOLIDAY | WEATHER | MAINTENANCE | CONSTRUCTION | POLICE_ACTIVITY | MEDICAL_EMERGENCY 
+      type t =
+        | UNKNOWN_CAUSE
+        | OTHER_CAUSE
+        | TECHNICAL_PROBLEM
+        | STRIKE
+        | DEMONSTRATION
+        | ACCIDENT
+        | HOLIDAY
+        | WEATHER
+        | MAINTENANCE
+        | CONSTRUCTION
+        | POLICE_ACTIVITY
+        | MEDICAL_EMERGENCY
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
+    end = struct
+      type t =
+        | UNKNOWN_CAUSE
+        | OTHER_CAUSE
+        | TECHNICAL_PROBLEM
+        | STRIKE
+        | DEMONSTRATION
+        | ACCIDENT
+        | HOLIDAY
+        | WEATHER
+        | MAINTENANCE
+        | CONSTRUCTION
+        | POLICE_ACTIVITY
+        | MEDICAL_EMERGENCY
+
       let to_int = function
         | UNKNOWN_CAUSE -> 1
         | OTHER_CAUSE -> 2
@@ -388,7 +1090,8 @@ module Transit_realtime = struct
         | CONSTRUCTION -> 10
         | POLICE_ACTIVITY -> 11
         | MEDICAL_EMERGENCY -> 12
-      
+      ;;
+
       let from_int = function
         | 1 -> Ok UNKNOWN_CAUSE
         | 2 -> Ok OTHER_CAUSE
@@ -403,14 +1106,35 @@ module Transit_realtime = struct
         | 11 -> Ok POLICE_ACTIVITY
         | 12 -> Ok MEDICAL_EMERGENCY
         | n -> Error (`Unknown_enum_value n)
-      
+      ;;
     end
+
     and Effect : sig
-      type t = NO_SERVICE | REDUCED_SERVICE | SIGNIFICANT_DELAYS | DETOUR | ADDITIONAL_SERVICE | MODIFIED_SERVICE | OTHER_EFFECT | UNKNOWN_EFFECT | STOP_MOVED 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
-    end = struct 
-      type t = NO_SERVICE | REDUCED_SERVICE | SIGNIFICANT_DELAYS | DETOUR | ADDITIONAL_SERVICE | MODIFIED_SERVICE | OTHER_EFFECT | UNKNOWN_EFFECT | STOP_MOVED 
+      type t =
+        | NO_SERVICE
+        | REDUCED_SERVICE
+        | SIGNIFICANT_DELAYS
+        | DETOUR
+        | ADDITIONAL_SERVICE
+        | MODIFIED_SERVICE
+        | OTHER_EFFECT
+        | UNKNOWN_EFFECT
+        | STOP_MOVED
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
+    end = struct
+      type t =
+        | NO_SERVICE
+        | REDUCED_SERVICE
+        | SIGNIFICANT_DELAYS
+        | DETOUR
+        | ADDITIONAL_SERVICE
+        | MODIFIED_SERVICE
+        | OTHER_EFFECT
+        | UNKNOWN_EFFECT
+        | STOP_MOVED
+
       let to_int = function
         | NO_SERVICE -> 1
         | REDUCED_SERVICE -> 2
@@ -421,7 +1145,8 @@ module Transit_realtime = struct
         | OTHER_EFFECT -> 7
         | UNKNOWN_EFFECT -> 8
         | STOP_MOVED -> 9
-      
+      ;;
+
       let from_int = function
         | 1 -> Ok NO_SERVICE
         | 2 -> Ok REDUCED_SERVICE
@@ -433,250 +1158,730 @@ module Transit_realtime = struct
         | 8 -> Ok UNKNOWN_EFFECT
         | 9 -> Ok STOP_MOVED
         | n -> Error (`Unknown_enum_value n)
-      
+      ;;
     end
+
     let name' () = "gtfs_realtime.transit_realtime.Alert"
-    type t = { active_period: TimeRange.t list; informed_entity: EntitySelector.t list; cause: Alert.Cause.t; effect: Alert.Effect.t; url: TranslatedString.t option; header_text: TranslatedString.t option; description_text: TranslatedString.t option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ?active_period ?informed_entity ?cause ?effect ?url ?header_text ?description_text ?(extensions' = Runtime'.Extensions.default) () -> 
-      let active_period = match active_period with Some v -> v | None -> [] in
-      let informed_entity = match informed_entity with Some v -> v | None -> [] in
-      let cause = match cause with Some v -> v | None -> Alert.Cause.UNKNOWN_CAUSE in
-      let effect = match effect with Some v -> v | None -> Alert.Effect.UNKNOWN_EFFECT in
-      { active_period; informed_entity; cause; effect; url; header_text; description_text; extensions' }
-    
+
+    type t =
+      { active_period : TimeRange.t list
+      ; informed_entity : EntitySelector.t list
+      ; cause : Alert.Cause.t
+      ; effect : Alert.Effect.t
+      ; url : TranslatedString.t option
+      ; header_text : TranslatedString.t option
+      ; description_text : TranslatedString.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ?active_period
+      ?informed_entity
+      ?cause
+      ?effect
+      ?url
+      ?header_text
+      ?description_text
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
+      let active_period =
+        match active_period with
+        | Some v -> v
+        | None -> []
+      in
+      let informed_entity =
+        match informed_entity with
+        | Some v -> v
+        | None -> []
+      in
+      let cause =
+        match cause with
+        | Some v -> v
+        | None -> Alert.Cause.UNKNOWN_CAUSE
+      in
+      let effect =
+        match effect with
+        | Some v -> v
+        | None -> Alert.Effect.UNKNOWN_EFFECT
+      in
+      { active_period
+      ; informed_entity
+      ; cause
+      ; effect
+      ; url
+      ; header_text
+      ; description_text
+      ; extensions'
+      }
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { active_period; informed_entity; cause; effect; url; header_text; description_text; extensions' } -> f' extensions' active_period informed_entity cause effect url header_text description_text in
-      let spec = Runtime'.Serialize.C.( repeated (1, (message (fun t -> TimeRange.to_proto t)), not_packed) ^:: repeated (5, (message (fun t -> EntitySelector.to_proto t)), not_packed) ^:: basic (6, (enum Alert.Cause.to_int), proto2 (Alert.Cause.UNKNOWN_CAUSE)) ^:: basic (7, (enum Alert.Effect.to_int), proto2 (Alert.Effect.UNKNOWN_EFFECT)) ^:: basic_opt (8, (message (fun t -> TranslatedString.to_proto t))) ^:: basic_opt (10, (message (fun t -> TranslatedString.to_proto t))) ^:: basic_opt (11, (message (fun t -> TranslatedString.to_proto t))) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply
+        ~f:f'
+        { active_period
+        ; informed_entity
+        ; cause
+        ; effect
+        ; url
+        ; header_text
+        ; description_text
+        ; extensions'
+        }
+        =
+        f'
+          extensions'
+          active_period
+          informed_entity
+          cause
+          effect
+          url
+          header_text
+          description_text
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          repeated (1, message (fun t -> TimeRange.to_proto t), not_packed)
+          ^:: repeated (5, message (fun t -> EntitySelector.to_proto t), not_packed)
+          ^:: basic (6, enum Alert.Cause.to_int, proto2 Alert.Cause.UNKNOWN_CAUSE)
+          ^:: basic (7, enum Alert.Effect.to_int, proto2 Alert.Effect.UNKNOWN_EFFECT)
+          ^:: basic_opt (8, message (fun t -> TranslatedString.to_proto t))
+          ^:: basic_opt (10, message (fun t -> TranslatedString.to_proto t))
+          ^:: basic_opt (11, message (fun t -> TranslatedString.to_proto t))
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' active_period informed_entity cause effect url header_text description_text -> { active_period; informed_entity; cause; effect; url; header_text; description_text; extensions' } in
-      let spec = Runtime'.Deserialize.C.( repeated (1, (message (fun t -> TimeRange.from_proto t)), not_packed) ^:: repeated (5, (message (fun t -> EntitySelector.from_proto t)), not_packed) ^:: basic (6, (enum Alert.Cause.from_int), proto2 (Alert.Cause.UNKNOWN_CAUSE)) ^:: basic (7, (enum Alert.Effect.from_int), proto2 (Alert.Effect.UNKNOWN_EFFECT)) ^:: basic_opt (8, (message (fun t -> TranslatedString.from_proto t))) ^:: basic_opt (10, (message (fun t -> TranslatedString.from_proto t))) ^:: basic_opt (11, (message (fun t -> TranslatedString.from_proto t))) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor
+        extensions'
+        active_period
+        informed_entity
+        cause
+        effect
+        url
+        header_text
+        description_text
+        =
+        { active_period
+        ; informed_entity
+        ; cause
+        ; effect
+        ; url
+        ; header_text
+        ; description_text
+        ; extensions'
+        }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          repeated (1, message (fun t -> TimeRange.from_proto t), not_packed)
+          ^:: repeated (5, message (fun t -> EntitySelector.from_proto t), not_packed)
+          ^:: basic (6, enum Alert.Cause.from_int, proto2 Alert.Cause.UNKNOWN_CAUSE)
+          ^:: basic (7, enum Alert.Effect.from_int, proto2 Alert.Effect.UNKNOWN_EFFECT)
+          ^:: basic_opt (8, message (fun t -> TranslatedString.from_proto t))
+          ^:: basic_opt (10, message (fun t -> TranslatedString.from_proto t))
+          ^:: basic_opt (11, message (fun t -> TranslatedString.from_proto t))
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and TimeRange : sig
-    val name': unit -> string
-    type t = { start: int option; end': int option; extensions': Runtime'.Extensions.t } 
+    val name' : unit -> string
+
+    type t =
+      { start : int option
+      ; end' : int option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
     val make : ?start:int -> ?end':int -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     let name' () = "gtfs_realtime.transit_realtime.TimeRange"
-    type t = { start: int option; end': int option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ?start ?end' ?(extensions' = Runtime'.Extensions.default) () -> 
-      
+
+    type t =
+      { start : int option
+      ; end' : int option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make ?start ?end' ?(extensions' = Runtime'.Extensions.default) () =
       { start; end'; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { start; end'; extensions' } -> f' extensions' start end' in
-      let spec = Runtime'.Serialize.C.( basic_opt (1, uint64_int) ^:: basic_opt (2, uint64_int) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { start; end'; extensions' } = f' extensions' start end' in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic_opt (1, uint64_int) ^:: basic_opt (2, uint64_int) ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' start end' -> { start; end'; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic_opt (1, uint64_int) ^:: basic_opt (2, uint64_int) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' start end' = { start; end'; extensions' } in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic_opt (1, uint64_int) ^:: basic_opt (2, uint64_int) ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and Position : sig
-    val name': unit -> string
-    type t = { latitude: float; longitude: float; bearing: float option; odometer: float option; speed: float option; extensions': Runtime'.Extensions.t } 
-    val make : latitude:float -> longitude:float -> ?bearing:float -> ?odometer:float -> ?speed:float -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+    val name' : unit -> string
+
+    type t =
+      { latitude : float
+      ; longitude : float
+      ; bearing : float option
+      ; odometer : float option
+      ; speed : float option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  latitude:float
+      -> longitude:float
+      -> ?bearing:float
+      -> ?odometer:float
+      -> ?speed:float
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     let name' () = "gtfs_realtime.transit_realtime.Position"
-    type t = { latitude: float; longitude: float; bearing: float option; odometer: float option; speed: float option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ~latitude ~longitude ?bearing ?odometer ?speed ?(extensions' = Runtime'.Extensions.default) () -> 
-      
+
+    type t =
+      { latitude : float
+      ; longitude : float
+      ; bearing : float option
+      ; odometer : float option
+      ; speed : float option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ~latitude
+      ~longitude
+      ?bearing
+      ?odometer
+      ?speed
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
       { latitude; longitude; bearing; odometer; speed; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { latitude; longitude; bearing; odometer; speed; extensions' } -> f' extensions' latitude longitude bearing odometer speed in
-      let spec = Runtime'.Serialize.C.( basic (1, float, required) ^:: basic (2, float, required) ^:: basic_opt (3, float) ^:: basic_opt (4, double) ^:: basic_opt (5, float) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { latitude; longitude; bearing; odometer; speed; extensions' } =
+        f' extensions' latitude longitude bearing odometer speed
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic (1, float, required)
+          ^:: basic (2, float, required)
+          ^:: basic_opt (3, float)
+          ^:: basic_opt (4, double)
+          ^:: basic_opt (5, float)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' latitude longitude bearing odometer speed -> { latitude; longitude; bearing; odometer; speed; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic (1, float, required) ^:: basic (2, float, required) ^:: basic_opt (3, float) ^:: basic_opt (4, double) ^:: basic_opt (5, float) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' latitude longitude bearing odometer speed =
+        { latitude; longitude; bearing; odometer; speed; extensions' }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic (1, float, required)
+          ^:: basic (2, float, required)
+          ^:: basic_opt (3, float)
+          ^:: basic_opt (4, double)
+          ^:: basic_opt (5, float)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and TripDescriptor : sig
     module rec ScheduleRelationship : sig
-      type t = SCHEDULED | ADDED | UNSCHEDULED | CANCELED 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
+      type t =
+        | SCHEDULED
+        | ADDED
+        | UNSCHEDULED
+        | CANCELED
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
     end
-    val name': unit -> string
-    type t = { trip_id: string option; route_id: string option; direction_id: int option; start_time: string option; start_date: string option; schedule_relationship: TripDescriptor.ScheduleRelationship.t option; extensions': Runtime'.Extensions.t } 
-    val make : ?trip_id:string -> ?route_id:string -> ?direction_id:int -> ?start_time:string -> ?start_date:string -> ?schedule_relationship:TripDescriptor.ScheduleRelationship.t -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+
+    val name' : unit -> string
+
+    type t =
+      { trip_id : string option
+      ; route_id : string option
+      ; direction_id : int option
+      ; start_time : string option
+      ; start_date : string option
+      ; schedule_relationship : TripDescriptor.ScheduleRelationship.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  ?trip_id:string
+      -> ?route_id:string
+      -> ?direction_id:int
+      -> ?start_time:string
+      -> ?start_date:string
+      -> ?schedule_relationship:TripDescriptor.ScheduleRelationship.t
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     module rec ScheduleRelationship : sig
-      type t = SCHEDULED | ADDED | UNSCHEDULED | CANCELED 
-      val to_int: t -> int
-      val from_int: int -> (t, [> Runtime'.Result.error]) result
-    end = struct 
-      type t = SCHEDULED | ADDED | UNSCHEDULED | CANCELED 
+      type t =
+        | SCHEDULED
+        | ADDED
+        | UNSCHEDULED
+        | CANCELED
+
+      val to_int : t -> int
+      val from_int : int -> (t, [> Runtime'.Result.error ]) result
+    end = struct
+      type t =
+        | SCHEDULED
+        | ADDED
+        | UNSCHEDULED
+        | CANCELED
+
       let to_int = function
         | SCHEDULED -> 0
         | ADDED -> 1
         | UNSCHEDULED -> 2
         | CANCELED -> 3
-      
+      ;;
+
       let from_int = function
         | 0 -> Ok SCHEDULED
         | 1 -> Ok ADDED
         | 2 -> Ok UNSCHEDULED
         | 3 -> Ok CANCELED
         | n -> Error (`Unknown_enum_value n)
-      
+      ;;
     end
+
     let name' () = "gtfs_realtime.transit_realtime.TripDescriptor"
-    type t = { trip_id: string option; route_id: string option; direction_id: int option; start_time: string option; start_date: string option; schedule_relationship: TripDescriptor.ScheduleRelationship.t option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ?trip_id ?route_id ?direction_id ?start_time ?start_date ?schedule_relationship ?(extensions' = Runtime'.Extensions.default) () -> 
-      
-      { trip_id; route_id; direction_id; start_time; start_date; schedule_relationship; extensions' }
-    
+
+    type t =
+      { trip_id : string option
+      ; route_id : string option
+      ; direction_id : int option
+      ; start_time : string option
+      ; start_date : string option
+      ; schedule_relationship : TripDescriptor.ScheduleRelationship.t option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ?trip_id
+      ?route_id
+      ?direction_id
+      ?start_time
+      ?start_date
+      ?schedule_relationship
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
+      { trip_id
+      ; route_id
+      ; direction_id
+      ; start_time
+      ; start_date
+      ; schedule_relationship
+      ; extensions'
+      }
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { trip_id; route_id; direction_id; start_time; start_date; schedule_relationship; extensions' } -> f' extensions' trip_id route_id direction_id start_time start_date schedule_relationship in
-      let spec = Runtime'.Serialize.C.( basic_opt (1, string) ^:: basic_opt (5, string) ^:: basic_opt (6, uint32_int) ^:: basic_opt (2, string) ^:: basic_opt (3, string) ^:: basic_opt (4, (enum TripDescriptor.ScheduleRelationship.to_int)) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply
+        ~f:f'
+        { trip_id
+        ; route_id
+        ; direction_id
+        ; start_time
+        ; start_date
+        ; schedule_relationship
+        ; extensions'
+        }
+        =
+        f'
+          extensions'
+          trip_id
+          route_id
+          direction_id
+          start_time
+          start_date
+          schedule_relationship
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic_opt (1, string)
+          ^:: basic_opt (5, string)
+          ^:: basic_opt (6, uint32_int)
+          ^:: basic_opt (2, string)
+          ^:: basic_opt (3, string)
+          ^:: basic_opt (4, enum TripDescriptor.ScheduleRelationship.to_int)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' trip_id route_id direction_id start_time start_date schedule_relationship -> { trip_id; route_id; direction_id; start_time; start_date; schedule_relationship; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic_opt (1, string) ^:: basic_opt (5, string) ^:: basic_opt (6, uint32_int) ^:: basic_opt (2, string) ^:: basic_opt (3, string) ^:: basic_opt (4, (enum TripDescriptor.ScheduleRelationship.from_int)) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor
+        extensions'
+        trip_id
+        route_id
+        direction_id
+        start_time
+        start_date
+        schedule_relationship
+        =
+        { trip_id
+        ; route_id
+        ; direction_id
+        ; start_time
+        ; start_date
+        ; schedule_relationship
+        ; extensions'
+        }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic_opt (1, string)
+          ^:: basic_opt (5, string)
+          ^:: basic_opt (6, uint32_int)
+          ^:: basic_opt (2, string)
+          ^:: basic_opt (3, string)
+          ^:: basic_opt (4, enum TripDescriptor.ScheduleRelationship.from_int)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and VehicleDescriptor : sig
-    val name': unit -> string
-    type t = { id: string option; label: string option; license_plate: string option; extensions': Runtime'.Extensions.t } 
-    val make : ?id:string -> ?label:string -> ?license_plate:string -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+    val name' : unit -> string
+
+    type t =
+      { id : string option
+      ; label : string option
+      ; license_plate : string option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  ?id:string
+      -> ?label:string
+      -> ?license_plate:string
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     let name' () = "gtfs_realtime.transit_realtime.VehicleDescriptor"
-    type t = { id: string option; label: string option; license_plate: string option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ?id ?label ?license_plate ?(extensions' = Runtime'.Extensions.default) () -> 
-      
+
+    type t =
+      { id : string option
+      ; label : string option
+      ; license_plate : string option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make ?id ?label ?license_plate ?(extensions' = Runtime'.Extensions.default) () =
       { id; label; license_plate; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { id; label; license_plate; extensions' } -> f' extensions' id label license_plate in
-      let spec = Runtime'.Serialize.C.( basic_opt (1, string) ^:: basic_opt (2, string) ^:: basic_opt (3, string) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { id; label; license_plate; extensions' } =
+        f' extensions' id label license_plate
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic_opt (1, string)
+          ^:: basic_opt (2, string)
+          ^:: basic_opt (3, string)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' id label license_plate -> { id; label; license_plate; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic_opt (1, string) ^:: basic_opt (2, string) ^:: basic_opt (3, string) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' id label license_plate =
+        { id; label; license_plate; extensions' }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic_opt (1, string)
+          ^:: basic_opt (2, string)
+          ^:: basic_opt (3, string)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and EntitySelector : sig
-    val name': unit -> string
-    type t = { agency_id: string option; route_id: string option; route_type: int option; trip: TripDescriptor.t option; stop_id: string option; extensions': Runtime'.Extensions.t } 
-    val make : ?agency_id:string -> ?route_id:string -> ?route_type:int -> ?trip:TripDescriptor.t -> ?stop_id:string -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+    val name' : unit -> string
+
+    type t =
+      { agency_id : string option
+      ; route_id : string option
+      ; route_type : int option
+      ; trip : TripDescriptor.t option
+      ; stop_id : string option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  ?agency_id:string
+      -> ?route_id:string
+      -> ?route_type:int
+      -> ?trip:TripDescriptor.t
+      -> ?stop_id:string
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     let name' () = "gtfs_realtime.transit_realtime.EntitySelector"
-    type t = { agency_id: string option; route_id: string option; route_type: int option; trip: TripDescriptor.t option; stop_id: string option; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ?agency_id ?route_id ?route_type ?trip ?stop_id ?(extensions' = Runtime'.Extensions.default) () -> 
-      
+
+    type t =
+      { agency_id : string option
+      ; route_id : string option
+      ; route_type : int option
+      ; trip : TripDescriptor.t option
+      ; stop_id : string option
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make
+      ?agency_id
+      ?route_id
+      ?route_type
+      ?trip
+      ?stop_id
+      ?(extensions' = Runtime'.Extensions.default)
+      ()
+      =
       { agency_id; route_id; route_type; trip; stop_id; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { agency_id; route_id; route_type; trip; stop_id; extensions' } -> f' extensions' agency_id route_id route_type trip stop_id in
-      let spec = Runtime'.Serialize.C.( basic_opt (1, string) ^:: basic_opt (2, string) ^:: basic_opt (3, int32_int) ^:: basic_opt (4, (message (fun t -> TripDescriptor.to_proto t))) ^:: basic_opt (5, string) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { agency_id; route_id; route_type; trip; stop_id; extensions' } =
+        f' extensions' agency_id route_id route_type trip stop_id
+      in
+      let spec =
+        Runtime'.Serialize.C.(
+          basic_opt (1, string)
+          ^:: basic_opt (2, string)
+          ^:: basic_opt (3, int32_int)
+          ^:: basic_opt (4, message (fun t -> TripDescriptor.to_proto t))
+          ^:: basic_opt (5, string)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' agency_id route_id route_type trip stop_id -> { agency_id; route_id; route_type; trip; stop_id; extensions' } in
-      let spec = Runtime'.Deserialize.C.( basic_opt (1, string) ^:: basic_opt (2, string) ^:: basic_opt (3, int32_int) ^:: basic_opt (4, (message (fun t -> TripDescriptor.from_proto t))) ^:: basic_opt (5, string) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' agency_id route_id route_type trip stop_id =
+        { agency_id; route_id; route_type; trip; stop_id; extensions' }
+      in
+      let spec =
+        Runtime'.Deserialize.C.(
+          basic_opt (1, string)
+          ^:: basic_opt (2, string)
+          ^:: basic_opt (3, int32_int)
+          ^:: basic_opt (4, message (fun t -> TripDescriptor.from_proto t))
+          ^:: basic_opt (5, string)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
+
   and TranslatedString : sig
     module rec Translation : sig
-      val name': unit -> string
-      type t = { text: string; language: string option; extensions': Runtime'.Extensions.t } 
-      val make : text:string -> ?language:string -> ?extensions':Runtime'.Extensions.t -> unit -> t
-      val to_proto: t -> Runtime'.Writer.t
-      val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
+      val name' : unit -> string
+
+      type t =
+        { text : string
+        ; language : string option
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      val make
+        :  text:string
+        -> ?language:string
+        -> ?extensions':Runtime'.Extensions.t
+        -> unit
+        -> t
+
+      val to_proto : t -> Runtime'.Writer.t
+      val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
     end
-    val name': unit -> string
-    type t = { translation: TranslatedString.Translation.t list; extensions': Runtime'.Extensions.t } 
-    val make : ?translation:TranslatedString.Translation.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
-    val to_proto: t -> Runtime'.Writer.t
-    val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-  end = struct 
+
+    val name' : unit -> string
+
+    type t =
+      { translation : TranslatedString.Translation.t list
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    val make
+      :  ?translation:TranslatedString.Translation.t list
+      -> ?extensions':Runtime'.Extensions.t
+      -> unit
+      -> t
+
+    val to_proto : t -> Runtime'.Writer.t
+    val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+  end = struct
     module rec Translation : sig
-      val name': unit -> string
-      type t = { text: string; language: string option; extensions': Runtime'.Extensions.t } 
-      val make : text:string -> ?language:string -> ?extensions':Runtime'.Extensions.t -> unit -> t
-      val to_proto: t -> Runtime'.Writer.t
-      val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
-    end = struct 
+      val name' : unit -> string
+
+      type t =
+        { text : string
+        ; language : string option
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      val make
+        :  text:string
+        -> ?language:string
+        -> ?extensions':Runtime'.Extensions.t
+        -> unit
+        -> t
+
+      val to_proto : t -> Runtime'.Writer.t
+      val from_proto : Runtime'.Reader.t -> (t, [> Runtime'.Result.error ]) result
+    end = struct
       let name' () = "gtfs_realtime.transit_realtime.TranslatedString.Translation"
-      type t = { text: string; language: string option; extensions': Runtime'.Extensions.t }
-      let make =
-        fun ~text ?language ?(extensions' = Runtime'.Extensions.default) () -> 
-        
+
+      type t =
+        { text : string
+        ; language : string option
+        ; extensions' : Runtime'.Extensions.t
+        }
+
+      let make ~text ?language ?(extensions' = Runtime'.Extensions.default) () =
         { text; language; extensions' }
-      
+      ;;
+
       let to_proto =
-        let apply = fun ~f:f' { text; language; extensions' } -> f' extensions' text language in
-        let spec = Runtime'.Serialize.C.( basic (1, string, required) ^:: basic_opt (2, string) ^:: nil ) in
-        let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+        let apply ~f:f' { text; language; extensions' } = f' extensions' text language in
+        let spec =
+          Runtime'.Serialize.C.(
+            basic (1, string, required) ^:: basic_opt (2, string) ^:: nil)
+        in
+        let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
         fun t -> apply ~f:serialize t
-      
+      ;;
+
       let from_proto =
-        let constructor = fun extensions' text language -> { text; language; extensions' } in
-        let spec = Runtime'.Deserialize.C.( basic (1, string, required) ^:: basic_opt (2, string) ^:: nil ) in
-        let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+        let constructor extensions' text language = { text; language; extensions' } in
+        let spec =
+          Runtime'.Deserialize.C.(
+            basic (1, string, required) ^:: basic_opt (2, string) ^:: nil)
+        in
+        let deserialize =
+          Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+        in
         fun writer -> deserialize writer |> Runtime'.Result.open_error
-      
+      ;;
     end
+
     let name' () = "gtfs_realtime.transit_realtime.TranslatedString"
-    type t = { translation: TranslatedString.Translation.t list; extensions': Runtime'.Extensions.t }
-    let make =
-      fun ?translation ?(extensions' = Runtime'.Extensions.default) () -> 
-      let translation = match translation with Some v -> v | None -> [] in
+
+    type t =
+      { translation : TranslatedString.Translation.t list
+      ; extensions' : Runtime'.Extensions.t
+      }
+
+    let make ?translation ?(extensions' = Runtime'.Extensions.default) () =
+      let translation =
+        match translation with
+        | Some v -> v
+        | None -> []
+      in
       { translation; extensions' }
-    
+    ;;
+
     let to_proto =
-      let apply = fun ~f:f' { translation; extensions' } -> f' extensions' translation in
-      let spec = Runtime'.Serialize.C.( repeated (1, (message (fun t -> TranslatedString.Translation.to_proto t)), not_packed) ^:: nil ) in
-      let serialize = Runtime'.Serialize.serialize [(1000, 2000)] (spec) in
+      let apply ~f:f' { translation; extensions' } = f' extensions' translation in
+      let spec =
+        Runtime'.Serialize.C.(
+          repeated
+            (1, message (fun t -> TranslatedString.Translation.to_proto t), not_packed)
+          ^:: nil)
+      in
+      let serialize = Runtime'.Serialize.serialize [ 1000, 2000 ] spec in
       fun t -> apply ~f:serialize t
-    
+    ;;
+
     let from_proto =
-      let constructor = fun extensions' translation -> { translation; extensions' } in
-      let spec = Runtime'.Deserialize.C.( repeated (1, (message (fun t -> TranslatedString.Translation.from_proto t)), not_packed) ^:: nil ) in
-      let deserialize = Runtime'.Deserialize.deserialize [(1000, 2000)] spec constructor in
+      let constructor extensions' translation = { translation; extensions' } in
+      let spec =
+        Runtime'.Deserialize.C.(
+          repeated
+            (1, message (fun t -> TranslatedString.Translation.from_proto t), not_packed)
+          ^:: nil)
+      in
+      let deserialize =
+        Runtime'.Deserialize.deserialize [ 1000, 2000 ] spec constructor
+      in
       fun writer -> deserialize writer |> Runtime'.Result.open_error
-    
+    ;;
   end
 end
